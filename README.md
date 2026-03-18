@@ -1,1 +1,1 @@
-#MindLink — CS4116 Software Development Project
+MindLink—CS4116 Software Development Project
