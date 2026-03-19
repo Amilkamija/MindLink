@@ -42,7 +42,7 @@ session_start();
         <a href="/pages/logout.php" class="btn btn-dark rounded-pill px-4">LOG OUT</a>
       <?php else: ?>
         <a class="nav-link" href="/pages/login.php">LOG IN</a>
-        <a href="/pages/register.php" class="btn btn-signup">SIGN UP</a>
+        <a href="/pages/signup.php" class="btn btn-signup">SIGN UP</a>
       <?php endif; ?>
     </div>
 
