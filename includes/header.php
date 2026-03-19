@@ -1,5 +1,4 @@
 <?php 
-
 if (session_status() === PHP_SESSION_NONE){
 session_start();
 } ?>
@@ -17,16 +16,7 @@ session_start();
 <nav class="navbar navbar-expand-lg border-bottom">
   <div class="container-fluid px-4">
 
-    <!-- CONTACT FAQ -->
-    <div class="d-flex gap-3">
-      <a class="nav-link" href="/pages/contact.php">CONTACT</a>
-      <a class="nav-link" href="/pages/faq.php">FAQ</a>
-    </div>
 
-    <!-- MINDLINK + add logo -->
-    <a class="navbar-brand mx-auto" href="/index.php">MINDLINK </a>
-
-    <!-- logged in vs logged out -->
     <div class="d-flex gap-3 align-items-center">
       <?php if (isset($_SESSION['user_id'])): ?>
         <a class="nav-link" href="/pages/dashboard.php">Home</a>
@@ -37,6 +27,18 @@ session_start();
         <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
           <a class="nav-link" href="/pages/admin.php">Admin</a>
         <?php endif; ?>
+      <?php else: ?>
+        <a class="nav-link" href="/pages/contact.php">CONTACT</a>
+        <a class="nav-link" href="/pages/faq.php">FAQ</a>
+      <?php endif; ?>
+    </div>
+
+    <!-- Mindlink + add Logo -->
+    <a class="navbar-brand mx-auto" href="/index.php">MINDLINK</a>
+
+    <!-- Login + SIgnin + Logout -->
+    <div class="d-flex gap-3 align-items-center">
+      <?php if (isset($_SESSION['user_id'])): ?>
         <a href="/pages/logout.php" class="btn btn-dark rounded-pill px-4">LOG OUT</a>
       <?php else: ?>
         <a class="nav-link" href="/pages/login.php">LOG IN</a>
