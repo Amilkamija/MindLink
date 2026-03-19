@@ -229,3 +229,167 @@ body {
 .project-card-body strong {
   font-weight: 700;
 }
+
+/* Profile page */
+.profile-top-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+  padding: 22px 0 10px;
+  flex-wrap: wrap;
+}
+
+.profile-avatar-wrap {
+  flex: 0 0 auto;
+}
+
+.profile-avatar {
+  width: 160px;
+  height: 160px;
+  background-color: var(--mid-green);
+  border-radius: 50%;
+  position: relative;
+}
+
+.profile-avatar-head {
+  width: 50px;
+  height: 50px;
+  border: 3px solid #000;
+  border-radius: 50%;
+  position: absolute;
+  top: 34px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.profile-avatar-body {
+  width: 84px;
+  height: 52px;
+  border: 3px solid #000;
+  border-bottom: none;
+  border-radius: 90px 90px 0 0;
+  position: absolute;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+}
+
+.profile-details {
+  min-width: 220px;
+  margin-right: auto;
+}
+
+.profile-details p {
+  font-size: 1.4rem;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--line-color);
+  width: fit-content;
+  min-width: 84px;
+}
+
+.profile-rating {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+  margin-right: 40px;
+}
+
+.rating-label {
+  font-size: 1.25rem;
+  border-bottom: 1px solid var(--line-color);
+  padding-bottom: 4px;
+}
+
+.stars {
+  color: var(--star-yellow);
+  font-size: 2.2rem;
+  letter-spacing: 4px;
+  line-height: 1;
+}
+
+.profile-line {
+  margin: 20px 0;
+}
+
+.section-pill {
+  display: inline-block;
+  background-color: var(--mid-green);
+  border-radius: 16px;
+  padding: 8px 20px;
+  font-size: 1.15rem;
+  margin-top: 10px;
+  margin-bottom: 24px;
+}
+
+.about-text {
+  font-size: 1.35rem;
+  min-height: 140px;
+  padding-left: 28px;
+}
+
+.profile-large-line {
+  margin: 26px 0 20px;
+}
+
+.view-members {
+  font-size: 0.95rem;
+  margin-left: 8px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+@media (max-width: 991px) {
+  .sidebar {
+    border-right: none;
+    border-bottom: 1px solid var(--line-color);
+    min-height: auto;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+  }
+
+  .admin-link-wrap {
+    margin-top: 0;
+  }
+
+  .logo-wrap {
+    gap: 8px;
+  }
+
+  .logo-text {
+    font-size: 2.6rem;
+  }
+
+  .logo-image {
+    height: 42px;
+  }
+
+  .search-pill {
+    min-width: 100%;
+    width: 100%;
+  }
+
+  .content-area {
+    padding: 10px 0;
+  }
+
+  .project-card,
+  .profile-project-card {
+    max-width: 100%;
+  }
+
+  .project-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .profile-top-section {
+    align-items: flex-start;
+  }
+
+  .profile-rating {
+    margin-right: 0;
+  }
+}
