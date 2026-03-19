@@ -35,3 +35,197 @@ body {
 .btn-signup:hover {
     background-color: #57673E;
 }
+
+/* root for projects, profile, admin and faq pages */
+:root {
+  --bg-color: #f6f4ee;
+  --line-color: #aab38d;
+  --dark-green: #7b8454;
+  --logo-green: #7d8657;
+  --mid-green: #a9b97b;
+  --light-green: #b7c86d;
+  --card-green: #899664;
+  --profile-card-green: #7f8f5c;
+  --star-yellow: #e2c53a;
+  --text-color: #111111;
+}
+
+/* Projects page */
+body {
+  background-color: var(--bg-color);
+  font-family: Arial, Helvetica, sans-serif;
+  color: var(--text-color);
+}
+
+.top-header {
+  min-height: 90px;
+}
+
+.small-links a {
+  text-decoration: none;
+  color: var(--logo-green);
+  font-size: 1.35rem;
+  letter-spacing: 0.5px;
+}
+
+.small-links a:hover,
+.sidebar a:hover {
+  color: var(--dark-green);
+}
+
+.logo-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.logo-text {
+  color: var(--logo-green);
+  font-size: 3.2rem;
+  font-weight: 400;
+  letter-spacing: 3px;
+  margin: 0;
+  line-height: 1;
+}
+
+.logo-image {
+  height: 52px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
+
+.search-pill {
+  background-color: var(--mid-green);
+  border-radius: 40px;
+  min-width: 310px;
+  height: 66px;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 1.45rem;
+  color: var(--text-color);
+}
+
+.search-icon {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  filter: invert(1);
+}
+
+.logout-btn {
+  background-color: var(--dark-green);
+  border: none;
+  border-radius: 30px;
+  padding: 14px 26px;
+  font-size: 1.25rem;
+  color: var(--text-color);
+}
+
+.header-line,
+.section-line {
+  border-top: 1px solid var(--line-color);
+}
+
+.sidebar {
+  border-right: 1px solid var(--line-color);
+  min-height: 78vh;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding-top: 20px;
+}
+
+.sidebar a {
+  color: var(--text-color);
+  text-decoration: none;
+  font-size: 1.8rem;
+  border-bottom: 1px solid var(--line-color);
+  width: fit-content;
+  padding-bottom: 6px;
+}
+
+.admin-link-wrap {
+  margin-top: auto;
+  margin-bottom: 12px;
+}
+
+.content-area {
+  padding: 10px 30px;
+}
+
+.my-projects-btn {
+  background-color: var(--dark-green);
+  color: var(--text-color);
+  border: none;
+  border-radius: 20px;
+  padding: 10px 22px;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.create-project-btn {
+  background-color: var(--light-green);
+  color: var(--text-color);
+  border: none;
+  border-radius: 30px;
+  padding: 12px 22px;
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.project-card,
+.profile-project-card {
+  border-radius: 14px;
+  padding: 20px 28px;
+  margin: 40px 0 0 0;
+}
+
+.project-card {
+  background-color: var(--mid-green);
+  max-width: 900px;
+}
+
+.profile-project-card {
+  background-color: var(--profile-card-green);
+  max-width: 800px;
+}
+
+.profile-project-card:hover {
+  transform: translateY(-2px);
+  transition: 0.2s ease;
+}
+
+.project-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--text-color);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+}
+
+.project-card-header h2 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.project-card-header span {
+  font-size: 1.8rem;
+  font-weight: 700;
+}
+
+.project-card-body p {
+  font-size: 1.4rem;
+  line-height: 1.4;
+  margin-bottom: 12px;
+}
+
+.project-card-body strong {
+  font-weight: 700;
+}
