@@ -36,7 +36,7 @@ body {
     background-color: #57673E;
 }
 
-/* main */
+/* index (main page), move this to index.css*/
 .card-1 { background-color: #C6CEBA; border: none; border-radius: 50px !important; min-height: 250px; text-align: center; }
 .card-2 { background-color: #859C62; border: none; border-radius: 50px !important; min-height: 250px; color: #FCF9F2; text-align: center;}
 .card-3 { background-color: #C9DFA8; border: none; border-radius: 50px !important; min-height: 250px; text-align: center;  }
