@@ -1,3 +1,17 @@
+/* root for projects, profile, admin and faq pages */
+:root {
+  --bg-color: #f6f4ee;
+  --line-color: #aab38d;
+  --dark-green: #7b8454;
+  --logo-green: #7d8657;
+  --mid-green: #a9b97b;
+  --light-green: #b7c86d;
+  --card-green: #899664;
+  --profile-card-green: #7f8f5c;
+  --star-yellow: #e2c53a;
+  --text-color: #111111;
+}
+
 /* FAQ page */
 .faq-header {
   min-height: 90px;
