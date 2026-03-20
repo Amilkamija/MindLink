@@ -1,0 +1,67 @@
+main {
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.signup-card {
+    background-color: #E8E4DC;
+    border-radius: 20px;
+    padding: 25px 35px;
+    text-align: center;
+    border: 1.5px solid #b5b0a5;
+    
+}
+
+.signup-title {
+    font-weight: 700;
+    color: #354C2B;
+    margin-bottom: 24px;
+}
+
+.signup-text {
+    width: 100%;
+    padding: 6px 16px;
+    margin-bottom: 8px;
+    border-radius: 50px;
+    border: 1px solid #ccc;
+    background-color: #F5F2EC;
+    text-align: center;
+    outline: none;
+    font-size: 0.85rem;
+}
+
+.signup-text:focus {
+    border-color: #859C62;
+    box-shadow: 0 0 0 2px rgba(133, 156, 98, 0.2);
+}
+
+.already-account {
+    font-size: 0.85rem;
+    color: #354C2B;
+    margin-bottom: 16px;
+}
+
+.already-account a {
+    font-weight: 700;
+    color: #354C2B;
+    text-decoration: none;
+}
+
+.signup-btn {
+    width: 100%;
+    padding: 8px;
+    background-color: #57673E;
+    color: #FCF9F2;
+    border: none;
+    border-radius: 50px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+
+.signup-btn:hover {
+    background-color: #354C2B;
+}
