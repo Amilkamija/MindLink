@@ -11,11 +11,22 @@ body {
     border-bottom: 1px solid #ddd;
 }
 
-.navbar-brand {
-    font-weight: bold;
-    letter-spacing: 2px;
+.navbar-logo {
+    font-weight: 400;
+    letter-spacing: 4px;
     color: #57673E !important;
+    font-size: 1.5rem;  /* was 1.25rem, increase this number */
+    text-decoration: none;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
 }
+.navbar-logo img {
+    vertical-align: middle;
+    margin-left: 4px;
+}
+
+
 
 .nav-link {
     color: #57673E !important;
@@ -36,22 +47,3 @@ body {
     background-color: #57673E;
 }
 
-/* index (main page), move this to index.css*/
-.card-1 { background-color: #C6CEBA; border: none; border-radius: 50px !important; min-height: 250px; text-align: center; }
-.card-2 { background-color: #859C62; border: none; border-radius: 50px !important; min-height: 250px; color: #FCF9F2; text-align: center;}
-.card-3 { background-color: #C9DFA8; border: none; border-radius: 50px !important; min-height: 250px; text-align: center;  }
-.card-4 { background-color: #AACD74; border: none; border-radius: 50px !important; min-height: 250px; text-align: center;  }
-
-.card-title-badge {
-    background-color: #FCF9F2;
-    color: #354C2B;
-    padding: 4px 12px;
-    border-radius: 27px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    display: block;
-    text-align: center;
-    margin-bottom: 12px;
-    margin-top:10px;
-    justify-content: center;
-}
