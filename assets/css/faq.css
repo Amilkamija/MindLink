@@ -1,0 +1,99 @@
+/* FAQ page */
+.faq-header {
+  min-height: 90px;
+}
+
+.faq-auth-link {
+  text-decoration: none;
+  color: var(--logo-green);
+  font-size: 1.45rem;
+  letter-spacing: 0.5px;
+}
+
+.faq-auth-link:hover {
+  color: var(--dark-green);
+}
+
+.faq-signup-btn {
+  text-decoration: none;
+  background-color: var(--dark-green);
+  color: var(--bg-color);
+  border-radius: 30px;
+  padding: 14px 26px;
+  font-size: 1.35rem;
+  display: inline-block;
+}
+
+.faq-signup-btn:hover {
+  color: var(--bg-color);
+  opacity: 0.95;
+}
+
+.faq-page-wrap {
+  max-width: 1100px;
+  margin: 90px auto 0;
+  text-align: center;
+}
+
+.faq-title {
+  font-size: 3rem;
+  font-weight: 700;
+  color: #25311b;
+  margin-bottom: 70px;
+}
+
+.faq-panel {
+  background-color: var(--card-green);
+  border-radius: 28px;
+  padding: 38px 44px;
+}
+
+.faq-item {
+  background-color: #f2efe8;
+  border-radius: 20px;
+  min-height: 62px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: 18px;
+  text-align: left;
+}
+
+.faq-item:last-child {
+  margin-bottom: 0;
+}
+
+.faq-plus {
+  font-size: 2rem;
+  font-weight: 300;
+  line-height: 1;
+  margin-left: 18px;
+}
+
+@media (max-width: 991px) {
+  .faq-page-wrap {
+    margin-top: 60px;
+  }
+
+  .faq-title {
+    font-size: 2.4rem;
+    margin-bottom: 40px;
+  }
+
+  .faq-panel {
+    padding: 24px 18px;
+  }
+
+  .faq-item {
+    font-size: 1rem;
+    padding: 14px 16px;
+    min-height: auto;
+  }
+
+  .faq-plus {
+    font-size: 1.7rem;
+  }
+}
