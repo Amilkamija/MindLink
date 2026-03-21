@@ -1,5 +1,5 @@
 <?php $extra_css = '/assets/css/sign_up.css'; ?>
-<?php require_once __DIR__ . '/../includes/header.php'; ?>
+<?php require_once __DIR__ . '/../includes/header1.php'; ?>
 
 <main class="container mt-5">
     <div class="row justify-content-center">
