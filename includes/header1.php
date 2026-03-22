@@ -19,7 +19,7 @@ session_start();
 <nav class="navbar navbar-expand-lg border-bottom">
   <div class="container-fluid px-4">
 
-
+//move to header2
     <div class="d-flex gap-3 align-items-center">
       <?php if (isset($_SESSION['user_id'])): ?>
         <a class="nav-link" href="/pages/dashboard.php">Home</a>
