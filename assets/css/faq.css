@@ -11,11 +11,11 @@
   --star-yellow: #e2c53a;
   --text-color: #111111;
 }
-body {
+/*body {
   background-color: var(--bg-color);
   font-family: Arial, Helvetica, sans-serif;
   color: var(--text-color);
-}
+}*/
 
 .top-header {
   min-height: 90px;
