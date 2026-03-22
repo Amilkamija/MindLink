@@ -19,37 +19,18 @@ session_start();
 <nav class="navbar navbar-expand-lg border-bottom">
   <div class="container-fluid px-4">
 
-//move to header2
     <div class="d-flex gap-3 align-items-center">
-      <?php if (isset($_SESSION['user_id'])): ?>
-        <a class="nav-link" href="/pages/dashboard.php">Home</a>
-        <a class="nav-link" href="/pages/projects.php">Projects</a>
-        <a class="nav-link" href="/pages/profile.php">Profile</a>
-        <a class="nav-link" href="/pages/matches.php">Matches</a>
-        <a class="nav-link" href="/pages/settings.php">Settings</a>
-        <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
-          <a class="nav-link" href="/pages/admin.php">Admin</a>
-        <?php endif; ?>
-      <?php else: ?>
-        <a class="nav-link" href="/pages/contact.php">CONTACT</a>
-        <a class="nav-link" href="/pages/faq.php">FAQ</a>
-      <?php endif; ?>
+      <a class="nav-link" href="/pages/contact.php">CONTACT</a>
+      <a class="nav-link" href="/pages/faq.php">FAQ</a>
     </div>
 
-
     <a class="navbar-logo mx-auto d-flex align-items-center gap-0" href="/index.php">
-    MINDLINK <img src="/assets/img/mindlink_logo.png" alt="MindLink" height="25" >
-</a>
-    
+      MINDLINK <img src="/assets/img/mindlink_logo.png" alt="MindLink" height="25">
+    </a>
 
-    <!-- Login + SIgnin + Logout -->
     <div class="d-flex gap-3 align-items-center">
-      <?php if (isset($_SESSION['user_id'])): ?>
-        <a href="/pages/logout.php" class="btn btn-dark rounded-pill px-4">LOG OUT</a>
-      <?php else: ?>
-        <a class="nav-link" href="/pages/login.php">LOG IN</a>
-        <a href="/pages/sign_up.php" class="btn btn-signup">SIGN UP</a>
-      <?php endif; ?>
+      <a class="nav-link" href="/pages/login.php">LOG IN</a>
+      <a href="/pages/sign_up.php" class="btn btn-signup">SIGN UP</a>
     </div>
 
   </div>
