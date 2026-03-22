@@ -1,4 +1,4 @@
-<?php require_once __DIR__ . '/../config/db.php'; ?>
+
 <?php $extra_css = '/assets/css/contact.css'; ?>
 <?php require_once __DIR__ . '/../includes/header1.php'; ?>
 
