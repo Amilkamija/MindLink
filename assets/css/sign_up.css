@@ -46,7 +46,7 @@ main {
 .already-account a {
     font-weight: 700;
     color: #354C2B;
-    text-decoration: none;
+    text-decoration: none !important;
 }
 
 .signup-btn {
