@@ -4,14 +4,14 @@
 <div class="container-fluid px-4 px-lg-5 pt-3">
   <div class="row mt-3">
     <div class="col-lg-2 sidebar">
-      <a href="#">Home</a>
-      <a href="#">Projects</a>
-      <a href="#">Profile</a>
-      <a href="#">Matches</a>
-      <a href="#">Settings</a>
+      <a href="/pages/dashboard.php">Home</a>
+      <a href="/pages/projects.php">Projects</a>
+      <a href="/pages/profile.php">Profile</a>
+      <a href="/pages/matches.php">Matches</a>
+      <a href="/pages/settings.php">Settings</a>
 
       <div class="admin-link-wrap">
-        <a href="#">Admin</a>
+        <a href="/pages/admin.php">Admin</a>
       </div>
     </div>
 
