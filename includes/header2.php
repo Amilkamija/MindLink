@@ -31,6 +31,7 @@ session_start();
     <div class="d-flex gap-3 align-items-center">
     <form class="d-flex" action="/pages/search.php" method="GET">
     <div class="search-bar d-flex align-items-center">
+        <img src="/assets/img/search_icon.png" alt="Search" class="search-icon">
         <input type="text" name="q" class="search-input" placeholder="SEARCH">
         <button type="submit" class="search-btn"></button>
         </div>
