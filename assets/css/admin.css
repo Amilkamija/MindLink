@@ -161,14 +161,14 @@ body {
 }
 
 .overview-number {
-  font-size: 1.7rem;
+  font-size: 1.5rem;
   font-weight: 700;
   line-height: 1.1;
 }
 
 .overview-label {
-  font-size: 1rem;
-  margin-top: 4px;
+  font-size: 0.8rem;
+  margin-top: 2px;
 }
 
 .overview-icon {
@@ -249,15 +249,15 @@ body {
 }
 
 .dot-1 {
-  left: 24px;
+  left: 25px;
 }
 
 .dot-2 {
-  left: 38px;
+  left: 35px;
 }
 
 .dot-3 {
-  left: 52px;
+  left: 45px;
 }
 
 .flag-pole {
