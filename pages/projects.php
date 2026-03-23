@@ -8,6 +8,7 @@
       <a href="/pages/projects.php">Projects</a>
       <a href="/pages/profile.php">Profile</a>
       <a href="/pages/matches.php">Matches</a>
+      <a href="/pages/messages.php">Messages</a>
       <a href="/pages/settings.php">Settings</a>
 
       <div class="admin-link-wrap">
