@@ -1,7 +1,6 @@
 <?php $extra_css = '/assets/css/faq.css'; ?>
 <?php require_once __DIR__ . '/../includes/header1.php'; ?>
 
-<div class="header-line"></div>
 <div class="faq-page-wrap">
     <h2 class="faq-title">FAQ</h2>
     <div class="faq-panel">
