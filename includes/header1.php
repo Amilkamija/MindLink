@@ -21,7 +21,7 @@ session_start();
 
     <div class="d-flex gap-3 align-items-center">
       <a class="nav-link" href="/pages/contact.php">CONTACT</a>
-      <a class="nav-link" href="/pages/faq.php">FAQ</a>
+      <a class="nav-link" href="/pages/faq1.php">FAQ</a>
     </div>
 
     <a class="navbar-logo mx-auto d-flex align-items-center gap-0" href="/index.php">
