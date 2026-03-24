@@ -18,25 +18,29 @@
 
     <div class="col-lg-10 content-area">
       <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
-        <button class="my-projects-btn">My projects</button>
+        <button class="my-projects-btn">Avalible Projects</button>
        <a href="/pages/create_project.php" class="create-project-btn">Create a project</a>
       </div>
 
       <div class="section-line"></div>
 
       <div class="project-card">
-        <div class="project-card-header">
-          <h2>CS4416- Software Development</h2>
-          <span>Year 3</span>
-        </div>
+  <div class="project-card-header">
+    <h2>CS4416- Software Development</h2>
+    <span>Year 3</span>
+  </div>
 
-        <div class="project-card-body">
-          <p><strong>Task:</strong> Building a web-based academic collaboration platform using PHP and MySQL</p>
-          <p><strong>Status:</strong> Open for applications</p>
-          <p><strong>Group size :</strong> 4</p>
-          <p><strong>Tags:</strong> PHP, MySQL, CSS, HTML, Organized, Consistent</p>
-        </div>
-      </div>
+  <div class="project-card-body">
+    <p><strong>Task:</strong> Building a web-based academic collaboration platform using PHP and MySQL</p>
+    <p><strong>Status:</strong> Open for applications</p>
+    <p><strong>Group size :</strong> 4</p>
+    <p><strong>Tags:</strong> PHP, MySQL, CSS, HTML, Organized, Consistent</p>
+  </div>
+
+  <div class="project-card-actions">
+    <a href="/pages/apply.php?project_id=1" class="apply-btn">Apply</a>
+  </div>
+</div>
 
       <div class="section-line mt-4"></div>
     </div>
