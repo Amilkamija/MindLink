@@ -191,3 +191,24 @@ body {
 .project-card-body strong {
   font-weight: 700;
 }
+.project-card-actions {
+  margin-top: 15px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.apply-btn {
+  background-color: #b7c86d;
+  color: #111;
+  padding: 10px 18px;
+  border-radius: 20px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: 0.2s ease;
+}
+
+.apply-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  color: #111;
+}
