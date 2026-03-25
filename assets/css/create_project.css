@@ -8,8 +8,7 @@
   --card-green: #a5b27a;
   --text-color: #111111;
 }
-
-/*Create_project page */
+/* Projects page */
 body {
   background-color: var(--bg-color);
   font-family: Arial, Helvetica, sans-serif;

@@ -27,16 +27,16 @@ require_once __DIR__ . '/../includes/header2.php';
 
       <div class="apply-project-card">
         <div class="apply-project-header">
-          <h2>CS4416 - Software Development</h2>
+          <h2>CS4084 - Mobile App Dev</h2>
           <span>Year 3</span>
         </div>
 
         <div class="apply-project-body">
-          <p><strong>Task:</strong> Building a web-based academic collaboration platform using PHP and MySQL</p>
+          <p><strong>Task:</strong> This project focuses on building a mobile application for student collaboration</p>
           <p><strong>Status:</strong> Open for applications</p>
           <p><strong>Team Size:</strong> 4</p>
-          <p><strong>Deadline:</strong> 20/04/2026</p>
-          <p><strong>Tags:</strong> PHP, MySQL, CSS, HTML, Organized, Consistent</p>
+          <p><strong>Deadline:</strong> 15/04/2026</p>
+          <p><strong>Tags:</strong> Java, Android Studio, UI Design, Team Collaboration</p>
         </div>
       </div>
 
@@ -46,22 +46,22 @@ require_once __DIR__ . '/../includes/header2.php';
 
       <div class="roles-grid">
         <div class="role-card">
-          <div class="role-card-title">Frontend Developer</div>
-          <p>Build and style the user interface for the platform.</p>
+          <div class="role-card-title">Database Support</div>
+          <p>MySQL and Database implementation support.</p>
           <div class="role-status">Status: Open</div>
           <button type="button" class="select-role-btn">Select</button>
         </div>
 
         <div class="role-card">
-          <div class="role-card-title">Backend Developer</div>
-          <p>Handle database logic, project applications, and server-side functionality.</p>
+          <div class="role-card-title">Testing and Debugging</div>
+          <p>Handle database testing and debugging MySQL code.</p>
           <div class="role-status">Status: Open</div>
           <button type="button" class="select-role-btn">Select</button>
         </div>
 
         <div class="role-card">
-          <div class="role-card-title">UI/UX Designer</div>
-          <p>Improve visual layout, usability, and user flow across the website.</p>
+          <div class="role-card-title">Documentation</div>
+          <p>Database design documentation and tables descriptions</p>
           <div class="role-status">Status: Open</div>
           <button type="button" class="select-role-btn">Select</button>
         </div>
@@ -77,9 +77,9 @@ require_once __DIR__ . '/../includes/header2.php';
             <label for="selected_role">Selected Role</label>
             <select id="selected_role" name="selected_role">
               <option value="">Choose a role</option>
-              <option>Frontend Developer</option>
-              <option>Backend Developer</option>
-              <option>UI/UX Designer</option>
+              <option>Database Support</option>
+              <option>Testing and Debugging</option>
+              <option>Documentation</option>
             </select>
           </div>
 
