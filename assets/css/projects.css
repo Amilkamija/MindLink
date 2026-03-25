@@ -124,8 +124,8 @@ body {
   background-color: var(--dark-green);
   color: var(--text-color);
   border: none;
-  border-radius: 20px;
-  padding: 10px 22px;
+  border-radius: 30px;
+  padding: 12px 22px;
   font-size: 1.2rem;
   font-weight: 700;
 }
@@ -208,6 +208,37 @@ body {
 }
 
 .apply-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  color: #111;
+}
+.my-projects-btn {
+  text-decoration: none;
+  display: inline-block;
+}
+.create-project-btn {
+  text-decoration: none;
+  display: inline-block;
+}
+
+.project-card-actions {
+  margin-top: 15px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px; 
+}
+
+.details-btn {
+  background-color: #e8e4dc;
+  color: #111;
+  padding: 10px 18px;
+  border-radius: 20px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: 0.2s ease;
+}
+
+.details-btn:hover {
   opacity: 0.9;
   transform: translateY(-1px);
   color: #111;
