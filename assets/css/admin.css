@@ -18,6 +18,12 @@ body {
   color: var(--text-color);
 }
 
+.main-content {
+    flex: 1;
+    padding: 20px;
+    min-width: 0;
+}
+
 .top-header {
   min-height: 90px;
 }
@@ -90,29 +96,6 @@ body {
 .header-line,
 .section-line {
   border-top: 1px solid var(--line-color);
-}
-
-.sidebar {
-  border-right: 1px solid var(--line-color);
-  min-height: 78vh;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  padding-top: 20px;
-}
-
-.sidebar a {
-  color: var(--text-color);
-  text-decoration: none;
-  font-size: 1.8rem;
-  border-bottom: 1px solid var(--line-color);
-  width: fit-content;
-  padding-bottom: 6px;
-}
-
-.admin-link-wrap {
-  margin-top: auto;
-  margin-bottom: 12px;
 }
 
 .content-area {

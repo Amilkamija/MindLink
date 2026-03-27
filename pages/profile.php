@@ -1,21 +1,6 @@
 <?php $extra_css = '../assets/css/profile.css'; ?>
 <?php require_once __DIR__ . '/../includes/header2.php'; ?>
 
-<div class="container-fluid px-4 px-lg-5 pt-3">
-  <div class="row mt-3">
-    <div class="col-lg-2 sidebar">
-      <a href="/pages/dashboard.php">Home</a>
-      <a href="/pages/projects.php">Projects</a>
-      <a href="/pages/profile.php">Profile</a>
-      <a href="/pages/matches.php">Matches</a>
-      <a href="/pages/messages.php">Messages</a>
-      <a href="/pages/settings.php">Settings</a>
-
-      <div class="admin-link-wrap">
-        <a href="/pages/admin.php">Admin</a>
-      </div>
-    </div>
-
     <div class="col-lg-10 content-area">
       <div class="profile-top-section">
         <div class="profile-avatar-wrap">
@@ -67,3 +52,4 @@
 
 </body>
 </html>
+<?php require_once __DIR__ . '/../includes/footer.php'; ?>

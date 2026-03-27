@@ -1,20 +1,7 @@
 <?php $extra_css = '../assets/css/projects.css'; ?>
 <?php require_once __DIR__ . '/../includes/header2.php'; ?>
 
-<div class="container-fluid px-4 px-lg-5 pt-3">
-  <div class="row mt-4">
-    <div class="col-lg-2 sidebar">
-      <a href="/pages/dashboard.php">Home</a>
-      <a href="/pages/projects.php">Projects</a>
-      <a href="/pages/profile.php">Profile</a>
-      <a href="/pages/matches.php">Matches</a>
-      <a href="/pages/messages.php">Messages</a>
-      <a href="/pages/settings.php">Settings</a>
 
-      <div class="admin-link-wrap">
-        <a href="/pages/admin.php">Admin</a>
-      </div>
-    </div>
 
     <div class="col-lg-10 content-area">
       <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
@@ -55,3 +42,4 @@
 
 </body>
 </html>
+<?php require_once __DIR__ . '/../includes/footer.php'; ?>
