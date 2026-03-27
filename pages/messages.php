@@ -1,11 +1,7 @@
-<<<<<<< HEAD
-<?php require_once __DIR__ . '/../includes/header2.php'; ?>
-<?php $extra_css = '/assets/css/shakeeba.css'; ?>
-=======
->>>>>>> e7302d8 (Finalize Messages, Matches, Project Details, and Settings pages with updated responsive CSS)
+
 <?php
 $pageTitle = "Messages - MindLink";
-$extra_css = '/assets/css/messages.css'; 
+$extra_css = '/assets/css/messages.css';
 require_once __DIR__ . '/../includes/header2.php';
 ?>
 
@@ -13,90 +9,134 @@ require_once __DIR__ . '/../includes/header2.php';
 
 <div class="messages-layout">
 
-    <!-- Chat list column -->
-    <div class="chat-list-panel">
-        <div class="chat-list-title">Messages</div>
+  <!-- Left side chat list -->
+  <div class="chat-list-panel">
+    <div class="chat-list-title">Messages</div>
 
-        <div class="search-box mb-3">
-            <input type="text" class="form-control form-control-sm" placeholder="Search messages...">
-        </div>
-
-        <h6 class="fw-bold small text-uppercase text-olive mb-2">Project Groups</h6>
-
-        <div class="chat-item">
-            <div class="chat-avatar"></div>
-            <div>
-                <div class="fw-bold">CS4084 - Mobile App</div>
-                <div class="chat-preview">John: I've updated the...</div>
-                <div class="text-muted small">11:15 PM</div>
-            </div>
-        </div>
-
-        <div class="chat-item">
-            <div class="chat-avatar"></div>
-            <div>
-                <div class="fw-bold">CS4116 -Software</div>
-                <div class="chat-preview">Jane: No problem...</div>
-                <div class="text-muted small">4:25 PM</div>
-            </div>
-        </div>
-
-        <h6 class="fw-bold small text-uppercase text-olive mt-3 mb-2">Direct Messages</h6>
-
-        <div class="chat-item">
-            <div class="chat-avatar"></div>
-            <div>
-                <div class="fw-bold">Sam Smith</div>
-                <div class="chat-preview">Yes, let’s meet up!</div>
-                <div class="text-muted small">11:00 AM</div>
-            </div>
-        </div>
+    <div class="search-box mb-3">
+      <input type="text" class="form-control form-control-sm" placeholder="Search messages...">
     </div>
 
-    <!-- Chat panel column -->
-    <div class="chat-panel">
-        <div class="chat-header d-flex justify-content-between align-items-center mb-3">
-            <h5 class="m-0 fw-bold">CS4084 – Mobile App Dev</h5>
-            <div>
-                <button class="btn btn-sm btn-outline-olive">View Members</button>
-                <button class="btn btn-sm btn-outline-olive">Report</button>
-            </div>
-        </div>
+    <h6 class="fw-bold small text-uppercase text-olive mb-2">Project Groups</h6>
 
-        <div class="chat-box">
-            <div class="message-thread">
-                <div class="message-row">
-                    <div class="message-bubble">Are we still meeting at 2PM?</div>
-                    <div class="message-meta">Sarah · 10:15 AM</div>
-                </div>
-
-                <div class="message-row message-right">
-                    <div class="message-bubble">Yes, I’ll be there!</div>
-                    <div class="message-meta">You · 10:55 AM</div>
-                </div>
-
-                <div class="message-row">
-                    <div class="message-bubble">Fantastic, see you then!</div>
-                    <div class="message-meta">Sarah · 11:15 AM</div>
-                </div>
-
-                <div class="message-row">
-                    <div class="message-bubble">I’ve updated the Word doc due for today!</div>
-                    <div class="message-meta">John · 1:30 PM</div>
-                </div>
-            </div>
-
-            <div class="message-input-wrap">
-                <input type="text" class="form-control" placeholder="Type a message...">
-                <button class="btn btn-olive px-4">Send</button>
-            </div>
-        </div>
+    <div class="chat-item">
+      <div class="chat-avatar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#3d4a24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="7" r="4"></circle>
+          <path d="M5 20c0-4 4-6 7-6s7 2 7 6"></path>
+        </svg>
+      </div>
+      <div class="chat-item-content">
+        <div class="chat-name">CS4084 - Mobile App</div>
+        <div class="chat-preview">John: I've updated the document for today...</div>
+        <div class="chat-time">11:15 PM</div>
+      </div>
     </div>
 
+    <div class="chat-item">
+      <div class="chat-avatar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#3d4a24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="7" r="4"></circle>
+          <path d="M5 20c0-4 4-6 7-6s7 2 7 6"></path>
+        </svg>
+      </div>
+      <div class="chat-item-content">
+        <div class="chat-name">CS4116 - Software</div>
+        <div class="chat-preview">Jane: No problem, I’ll check it later...</div>
+        <div class="chat-time">4:25 PM</div>
+      </div>
+    </div>
+
+    <h6 class="fw-bold small text-uppercase text-olive mt-3 mb-2">Direct Messages</h6>
+
+    <div class="chat-item">
+      <div class="chat-avatar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#3d4a24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="7" r="4"></circle>
+          <path d="M5 20c0-4 4-6 7-6s7 2 7 6"></path>
+        </svg>
+      </div>
+      <div class="chat-item-content">
+        <div class="chat-name">Sam Smith</div>
+        <div class="chat-preview">Yes, let’s meet up!</div>
+        <div class="chat-time">11:00 AM</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right side chat panel -->
+  <div class="chat-panel">
+    <div class="chat-header">
+      <h5>CS4084 – Mobile App Dev</h5>
+
+      <div class="chat-header-actions">
+        <a href="/pages/team_members.php" class="btn btn-sm btn-outline-olive">View Members</a>
+        <a href="/pages/report.php" class="btn btn-sm btn-outline-olive">Report</a>
+      </div>
+    </div>
+
+    <div class="chat-box">
+      <div class="message-thread">
+
+        <div class="message-row">
+          <div class="message-left-wrap">
+            <div class="chat-avatar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#3d4a24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="7" r="4"></circle>
+                <path d="M5 20c0-4 4-6 7-6s7 2 7 6"></path>
+              </svg>
+            </div>
+            <div>
+              <div class="message-bubble">Are we still meeting at 2PM?</div>
+              <div class="message-meta">Sarah · 10:15 AM</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="message-row message-right">
+          <div class="message-bubble">Yes, I’ll be there!</div>
+          <div class="message-meta">You · 10:55 AM</div>
+        </div>
+
+        <div class="message-row">
+          <div class="message-left-wrap">
+            <div class="chat-avatar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#3d4a24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="7" r="4"></circle>
+                <path d="M5 20c0-4 4-6 7-6s7 2 7 6"></path>
+              </svg>
+            </div>
+            <div>
+              <div class="message-bubble">Fantastic, see you then!</div>
+              <div class="message-meta">Sarah · 11:15 AM</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="message-row">
+          <div class="message-left-wrap">
+            <div class="chat-avatar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#3d4a24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="7" r="4"></circle>
+                <path d="M5 20c0-4 4-6 7-6s7 2 7 6"></path>
+              </svg>
+            </div>
+            <div>
+              <div class="message-bubble">I’ve updated the Word doc due for today!</div>
+              <div class="message-meta">John · 1:30 PM</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <form class="message-input-wrap" method="POST" action="">
+        <input type="text" class="form-control" placeholder="Type a message..." name="message">
+        <button type="submit" class="btn btn-olive">Send</button>
+      </form>
+    </div>
+  </div>
 </div>
 
-<<<<<<< HEAD
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
-=======
-<?php include __DIR__ . '/../includes/footer.php'; ?>
->>>>>>> e7302d8 (Finalize Messages, Matches, Project Details, and Settings pages with updated responsive CSS)
+
