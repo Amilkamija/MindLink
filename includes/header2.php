@@ -1,7 +1,8 @@
-<?php
+<?php 
 if (session_status() === PHP_SESSION_NONE){
 session_start();
 } ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -41,3 +42,25 @@ session_start();
 
 </div>
 </nav>
+
+<div class="d-flex">
+<div class="sidebar border-end">
+    <ul class="sidebar-nav" style="list-style: none; padding: 0; margin: 0;">
+    <li class="nav-item">
+        <a class="nav-link" href="/pages/dashboard.php">Home</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="/pages/projects.php">Projects</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="/pages/profile.php">Profile</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="/pages/matches.php">Matches</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="/pages/settings.php">Settings</a>
+    </li>
+    </ul>
+</div>
+<div class="main-content">
