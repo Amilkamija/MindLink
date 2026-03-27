@@ -1,5 +1,5 @@
 <?php require_once __DIR__ . '/../includes/header2.php'; ?>
-<?php $extra_css = '/assets/css/shakeebap.css'; ?>
+<?php $extra_css = '/assets/css/shakeeba.css'; ?>
 <?php
 $pageTitle = "Messages - MindLink";
 ?>
