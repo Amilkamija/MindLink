@@ -4,6 +4,7 @@ body {
     background-color: #FCF9F2;
     font-family: 'Inter', serif;
     color: #57673E;
+    overflow-x: hidden;
 }
 
 .navbar {
@@ -20,6 +21,19 @@ body {
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
+}
+@media (max-width: 768px) {
+    .navbar-logo {
+        position: static;
+        transform: none;
+        margin: 0 auto;
+    }
+
+    .navbar > .container-fluid {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+    }
 }
 .navbar-logo img {
     vertical-align: middle;

@@ -1,0 +1,102 @@
+.main-content {
+    zoom: 0.9;
+}
+
+.home-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #354C2B;
+    text-align: center;
+    margin-bottom: 12px;
+    margin-top: 20px;
+}
+
+.home-title-green {
+    color: #859C62;
+}
+
+.home-subtitle {
+    text-align: center;
+    color: #354C2B;
+    font-size: 0.95rem;
+    margin-bottom: 4px;
+}
+
+.home-divider {
+    border-top: 1px solid #b5b0a5;
+    margin: 24px 0;
+}
+
+.home-cards-row {
+    display: flex;
+    gap: 24px;
+    justify-content: center;
+    margin-bottom: 8px;
+}
+
+.home-cards-row-bottom {
+    justify-content: center;
+    max-width: 700px;
+    margin: 0 auto 24px auto;
+}
+
+.home-card {
+    border-radius: 16px;
+    padding: 20px 24px;
+    flex: 1;
+    max-width: 280px;
+    border: 1.5px solid rgba(255,255,255,0.6);
+}
+
+.home-card-dark {
+    background-color: #718355;
+    color: #FCF9F2;
+}
+
+.home-card-light {
+    background-color: #C9DFA8;
+    color: #354C2B;
+}
+
+.home-card-mid {
+    background-color: #AACD74;
+    color: #354C2B;
+}
+
+.home-card-muted {
+    background-color: #C6CEBA;
+    color: #354C2B;
+}
+
+.home-card-dark2 {
+    background-color: #859C62;
+    color: #FCF9F2;
+}
+
+.home-card-badge {
+    background-color: #FCF9F2;
+    color: #354C2B;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: block;
+    text-align: center;
+    margin-bottom: 12px;
+    width: 100%s;
+    margin-left: auto;
+    margin-right: auto;
+    border: 1.5px solid #FCF9F2;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+.home-card p {
+    font-size: 0.85rem;
+    margin-bottom: 0;
+}
+
+.home-card ul {
+    font-size: 0.85rem;
+    margin-bottom: 0;
+    padding-left: 18px;
+}

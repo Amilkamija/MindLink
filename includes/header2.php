@@ -56,6 +56,9 @@ session_start();
         <a class="nav-link" href="/pages/profile.php">Profile</a>
     </li>
     <li class="nav-item">
+        <a class="nav-link" href="/pages/messages.php">Messages</a>
+    </li>
+    <li class="nav-item">
         <a class="nav-link" href="/pages/matches.php">Matches</a>
     </li>
     <li class="nav-item">
