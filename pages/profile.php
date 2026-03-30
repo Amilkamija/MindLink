@@ -34,6 +34,8 @@
 
       <div class="section-pill">Past Projects</div>
 
+        <div class="past-projects-container">
+
       <div class="profile-project-card">
         <div class="project-card-header">
           <h2>CS4084 - Mobile Application Development</h2>
@@ -48,6 +50,7 @@
       </div>
     </div>
   </div>
+</div>
 </div>
 
 </body>
