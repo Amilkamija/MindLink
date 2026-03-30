@@ -3,107 +3,122 @@ $extra_css = '/assets/css/create_project.css';
 require_once __DIR__ . '/../includes/header2.php';
 ?>
 
+<div class="col-lg-10 content-area">
 
-    <div class="col-lg-10 content-area">
-      <div class="create-project-top">
-        <div class="section-pill create-project-pill">Create Project</div>
+  <div class="create-project-top">
+    <div class="section-pill create-project-pill">Create Project</div>
+  </div>
+
+  <div class="section-line"></div>
+
+  <div class="create-layout">
+
+  
+    <form action="#" method="POST" class="create-project-form">
+
+      
+      <div class="form-card">
+        <div class="form-card-title">Project Details</div>
+
+        <div class="create-grid two-col">
+          <div class="field-group full-width">
+            <label>Project Title</label>
+            <input type="text" placeholder="Enter project title">
+          </div>
+
+          <div class="field-group">
+            <label>Module / Subject</label>
+            <input type="text" placeholder="e.g. CS4416 Software Development">
+          </div>
+
+          <div class="field-group">
+            <label>Year</label>
+            <select>
+              <option>Select year</option>
+              <option>Year 1</option>
+              <option>Year 2</option>
+              <option>Year 3</option>
+              <option>Year 4</option>
+            </select>
+          </div>
+
+          <div class="field-group full-width">
+            <label>Project Description</label>
+            <textarea placeholder="Describe the project..."></textarea>
+          </div>
+        </div>
       </div>
 
-      <div class="section-line"></div>
+     
+      <div class="section-line form-divider"></div>
 
-      <form action="#" method="POST" class="create-project-form">
+     
+      <div class="form-card">
+        <div class="form-card-title">Requirements</div>
 
-        <div class="form-card">
-          <div class="form-card-title">Project Details</div>
+        <div class="create-grid two-col">
+          <div class="field-group">
+            <label>Team Size</label>
+            <input type="number" placeholder="e.g. 4">
+          </div>
 
-          <div class="create-grid two-col">
-            <div class="field-group full-width">
-              <label for="project_title">Project Title</label>
-              <input type="text" id="project_title" name="project_title" placeholder="Enter project title">
-            </div>
+          <div class="field-group">
+            <label>Project Status</label>
+            <select>
+              <option>Select status</option>
+              <option>Open for applications</option>
+              <option>In progress</option>
+              <option>Completed</option>
+            </select>
+          </div>
 
-            <div class="field-group">
-              <label for="module_name">Module / Subject</label>
-              <input type="text" id="module_name" name="module_name" placeholder="e.g. CS4416 Software Development">
-            </div>
+          <div class="field-group">
+            <label>Deadline</label>
+            <input type="date">
+          </div>
 
-            <div class="field-group">
-              <label for="year_group">Year</label>
-              <select id="year_group" name="year_group">
-                <option value="">Select year</option>
-                <option>Year 1</option>
-                <option>Year 2</option>
-                <option>Year 3</option>
-                <option>Year 4</option>
-              </select>
-            </div>
-
-            <div class="field-group full-width">
-              <label for="description">Project Description</label>
-              <textarea id="description" name="description" rows="5" placeholder="Describe the project, goals, and what kind of teammates you are looking for..."></textarea>
-            </div>
+          <div class="field-group">
+            <label>Skills / Tags</label>
+            <input type="text" placeholder="e.g. PHP, MySQL, UI Design">
           </div>
         </div>
+      </div>
 
-        <div class="form-card">
-          <div class="form-card-title">Requirements</div>
+    </form>
 
-          <div class="create-grid two-col">
-            <div class="field-group">
-              <label for="team_size">Team Size</label>
-              <input type="number" id="team_size" name="team_size" placeholder="e.g. 4">
-            </div>
+ 
+    <div class="roles-panel">
 
-            <div class="field-group">
-              <label for="status">Project Status</label>
-              <select id="status" name="status">
-                <option value="">Select status</option>
-                <option>Open for applications</option>
-                <option>In progress</option>
-                <option>Completed</option>
-              </select>
-            </div>
+      <div class="roles-panel-title">Roles Needed</div>
 
-            <div class="field-group">
-              <label for="deadline">Deadline</label>
-              <input type="date" id="deadline" name="deadline">
-            </div>
+      <div class="role-card">
+        <div class="role-card-title">Role 1</div>
+        <p>Add a key role for your project team.</p>
+        <input type="text" placeholder="e.g. Backend Developer">
+      </div>
 
-            <div class="field-group">
-              <label for="tags">Skills / Tags</label>
-              <input type="text" id="tags" name="tags" placeholder="e.g. PHP, MySQL, UI Design">
-            </div>
-          </div>
-        </div>
+      <div class="role-card">
+        <div class="role-card-title">Role 2</div>
+        <p>Add another role to balance skills.</p>
+        <input type="text" placeholder="e.g. UI/UX Designer">
+      </div>
 
-        <div class="form-card">
-          <div class="form-card-title">Roles Needed</div>
+      <div class="role-card">
+        <div class="role-card-title">Role 3</div>
+        <p>Optional additional support role.</p>
+        <input type="text" placeholder="e.g. Project Manager">
+      </div>
 
-          <div class="create-grid three-col">
-            <div class="field-group">
-              <label for="role_1">Role 1</label>
-              <input type="text" id="role_1" name="role_1" placeholder="e.g. Backend Developer">
-            </div>
+        
+      <div class="roles-actions">
+        <button type="button" class="save-draft-btn">Save Draft</button>
+        <button type="submit" class="publish-project-btn">Publish</button>
+      </div>
 
-            <div class="field-group">
-              <label for="role_2">Role 2</label>
-              <input type="text" id="role_2" name="role_2" placeholder="e.g. UI/UX Designer">
-            </div>
-
-            <div class="field-group">
-              <label for="role_3">Role 3</label>
-              <input type="text" id="role_3" name="role_3" placeholder="e.g. Project Manager">
-            </div>
-          </div>
-        </div>
-
-        <div class="create-project-actions">
-          <button type="button" class="save-draft-btn">Save Draft</button>
-          <button type="submit" class="publish-project-btn">Publish Project</button>
-        </div>
-      </form>
     </div>
+
   </div>
+
 </div>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
