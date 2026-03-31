@@ -1,3 +1,8 @@
+<!--
+Author: Maksims Gerkis
+Description: Logout modal
+Verison:1
+-->
 <?php
 //Starts or resumes the Session
 session_start();

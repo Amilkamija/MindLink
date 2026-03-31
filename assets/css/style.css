@@ -104,7 +104,7 @@ body {
     background-color: #354C2B;
 }
 
-/*sidebar */
+
 .sidebar {
     width: 160px;
     min-height: 100vh;
@@ -135,4 +135,33 @@ body {
 .main-content {
     flex: 1;
     padding: 20px;
+}
+
+
+#logoutModal .d-flex {
+    gap: 16px;
+}
+#logoutModal .btn-secondary,
+#logoutModal .btn-dark {
+    padding: 6px 20px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+}
+#logoutModal .btn-secondary {
+    background-color: #718355;
+    border-color: #718355;
+    color: #FCF9F2;
+}
+#logoutModal .btn-secondary:hover {
+    background-color: #57673E;
+    border-color: #57673E;
+}
+#logoutModal .btn-dark {
+    background-color: #57673E;
+    border-color: #57673E;
+    color: #FCF9F2;
+}
+#logoutModal .btn-dark:hover {
+    background-color: #354C2B;
+    border-color: #354C2B;
 }

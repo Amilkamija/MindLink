@@ -1,6 +1,15 @@
+<?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+$extra_css = '/assets/css/contact.css';
 
-<?php $extra_css = '/assets/css/contact.css'; ?>
-<?php require_once __DIR__ . '/../includes/header1.php'; ?>
+if (isset($_SESSION['user_id'])) {
+    require_once __DIR__ . '/../includes/header2.php';
+} else {
+    require_once __DIR__ . '/../includes/header1.php';
+}
+?>
 
 <main class="container mt-5">
     <h2 class="contact-title">Contact Us</h2>
