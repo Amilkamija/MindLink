@@ -1,8 +1,7 @@
-<?php 
+<?php
 if (session_status() === PHP_SESSION_NONE){
 session_start();
 } ?>
-
 
 <!DOCTYPE html>
 <html lang="en">
@@ -37,17 +36,31 @@ session_start();
         <button type="submit" class="search-btn"></button>
         </div>
     </form>
-    <a href="/pages/logout.php" class="btn btn-logout px-4">LOG OUT</a>
+            <button class  = "btn btn-logout px-4" data-bs-toggle="modal" data-bs-target ="#logoutModal">
+                LOG OUT
+            </button>
     </div>
 
 </div>
 </nav>
 
+<div class="modal fade" id="logoutModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-center p-3">
+            <p>Are you sure you want to log out?</p>
+            <div class="d-flex justify-content-center gap-3">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <a href="/pages/log_out.php" class="btn btn-dark">Log Out</a>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="d-flex">
 <div class="sidebar border-end">
     <ul class="sidebar-nav" style="list-style: none; padding: 0; margin: 0;">
     <li class="nav-item">
-        <a class="nav-link" href="/pages/dashboard.php">Home</a>
+        <a class="nav-link" href="/pages/home.php">Home</a>
     </li>
     <li class="nav-item">
         <a class="nav-link" href="/pages/projects.php">Projects</a>
