@@ -156,6 +156,51 @@ body {
   opacity: 0.96;
 }
 
+.status-open {
+  background-color: #d4edda;
+  color: #155724;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.status-progress {
+  background-color: #fff3cd;
+  color: #856404;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.status-completed {
+  background-color: #f8d7da;
+  color: #721c24;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-weight: 600;
+  display: inline-block;
+}
+.filter-all {
+  background: var(--dark-green);
+  color: #111;
+}
+
+.filter-open {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.filter-progress {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.filter-completed {
+  background-color: #f8d7da;
+  color: #721c24;
+}
 @media (max-width: 992px) {
   .content-area {
     padding: 20px 22px 30px;
