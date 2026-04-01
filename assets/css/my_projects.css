@@ -31,7 +31,7 @@ body {
   min-height: 40px;
   font-size: 0.95rem;
   font-weight: 700;
-  margin-bottom: 0;
+  margin-bottom: 12px;
 }
 
 .section-line {
@@ -50,19 +50,7 @@ body {
 }
 
 .project-card + .project-card {
-  position: relative;
   margin-top: 26px;
-  padding-top: 22px;
-}
-
-.project-card + .project-card::before {
-  content: "";
-  position: absolute;
-  top: -14px;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: var(--line-color);
 }
 
 .project-card-header {
@@ -80,6 +68,7 @@ body {
   font-size: 1.55rem;
   font-weight: 700;
   color: #111;
+  line-height: 1.2;
 }
 
 .project-card-header span {
@@ -111,26 +100,33 @@ body {
 .status {
   display: inline-block;
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 700;
   padding: 4px 10px;
   border-radius: 999px;
   margin-left: 6px;
 }
 
+.status-open {
+  background-color: #d4edda;
+  color: #155724;
+}
+
 .status-progress {
-  background: #dbe4b8;
-  color: #4d5b2c;
+  background-color: #fff3cd;
+  color: #856404;
 }
 
 .status-completed {
-  background: #e7ebe0;
-  color: #5f6556;
+  background-color: #f8d7da;
+  color: #721c24;
 }
 
 .project-card-actions {
   margin-top: 18px;
   display: flex;
   justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .view-applications-btn {
@@ -143,17 +139,16 @@ body {
   padding: 0 14px;
   font-size: 0.92rem;
   font-weight: 700;
-
   background: #f8f6f1;
   border: 1px solid #d6d9cb;
   color: #111;
-
   transition: 0.2s ease;
 }
 
 .view-applications-btn:hover {
   transform: translateY(-1px);
   opacity: 0.96;
+  color: #111;
 }
 
 .project-card-actions.completed {
@@ -162,11 +157,24 @@ body {
 
 .completed-badge {
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 700;
   color: #5f6556;
-  background: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.45);
   padding: 5px 10px;
   border-radius: 999px;
+}
+
+.joined-project {
+  background: #b4c287;
+  border-color: #9fae74;
+}
+
+.section-pill + .project-card {
+  margin-top: 14px;
+}
+
+.project-card .project-card-actions:empty {
+  display: none;
 }
 
 @media (max-width: 992px) {
