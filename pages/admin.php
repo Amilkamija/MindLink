@@ -2,7 +2,7 @@
 <?php require_once __DIR__ . '/../includes/header2.php'; ?>
 
 <div class="main-content">
-    <div class="col-lg-10 content-area">
+    <div class="content-area">
       <div class="admin-main-grid">
         <div class="admin-left">
 
@@ -181,6 +181,5 @@
     </div>
 
   </div>
-</div>
 </div>
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
