@@ -3,7 +3,6 @@ $pageTitle = "Messages - MindLink";
 $extra_css = '/assets/css/messages.css';
 require_once __DIR__ . '/../includes/header2.php';
 ?>
-
 <div class="messages-layout">
 
     <!-- Left side chat list -->
