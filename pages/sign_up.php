@@ -30,7 +30,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->bind_param("ss", $email, $password_hash);
 
             if ($stmt->execute()) {
-                session_regenerate_id(true);
                 $_SESSION['user_id'] = $conn->insert_id;
                 $_SESSION['role']    = 'user';
                 header("Location: /pages/home.php");

@@ -18,7 +18,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $user = $result->fetch_assoc();
 
         if (password_verify($password, $user['password_hash'])) {
-            session_regenerate_id(true);
             $_SESSION['user_id'] = $user['user_id'];
             $_SESSION['role'] = $user['role'];
             header("Location: /pages/home.php");
