@@ -1,138 +1,197 @@
-   :root {
-  --olive: #9ca47e;
-  --olive-dark: #626a42;
-  --bg-soft: #fafaf6;
-  --card-bg: #fcfcf7;
-  --border-soft: #dadcc9;
-  --text-dark: #2c2c2c;
+:root {
+  --cream-bg: #f8f6ed;
+  --card-bg: #f0efe4;
+  --olive: #a7b18c;
+  --olive-light: #dbe0c6;
+  --olive-dark: #8a936d;
+  --text-main: #333;
+  --text-muted: #666;
+  --white: #ffffff;
 }
 
-/* base */
+/* Base */
 body {
-  background-color: var(--bg-soft);
-  font-family: "Inter", sans-serif;
-  color: var(--text-dark);
+  background-color: var(--cream-bg);
+  font-family: 'Inter', sans-serif;
+  color: var(--text-main);
+  margin: 0;
+}
+.matches-container {
+  max-width: 1100px;
+  margin: 40px auto 60px;
+  padding: 0 20px;
 }
 
-.matches-layout {
-  display: flex;
-  flex-direction: column;
-  gap: 32px;
-}
-
-/* ---- stats ---- */
-.matches-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 20px;
-}
-.stat-card {
-  background-color: #fff;
-  border: 1px solid var(--border-soft);
-  border-radius: 18px;
-  padding: 20px 16px;
+/* Headings */
+.section-header {
   text-align: center;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.03);
+  margin-bottom: 30px;
 }
-.stat-card h3 {
+.section-header h2 {
+  font-size: 1.8rem;
   color: var(--olive-dark);
   font-weight: 700;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
+}
+.section-header p {
+  color: var(--text-muted);
+  max-width: 700px;
+  margin: 0 auto;
+}
+.divider {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  margin: 25px 0 35px;
+}
+.subheader {
+  color: var(--olive-dark);
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 18px;
 }
 
-/* ---- grid ---- */
-.matches-grid {
+/* Grid */
+.profiles-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 22px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
 }
 
-/* ---- cards ---- */
-.match-card {
+/* Card */
+.profile-card {
   background-color: var(--card-bg);
-  border: 1px solid var(--border-soft);
-  border-radius: 18px;
-  padding: 24px 22px;
+  border-radius: 10px;
   text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  transition: 0.3s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
-}
-.match-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.05);
+  padding: 16px 12px 34px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  position: relative;
+  min-height: 210px;
 }
 
-/* ---- FIGMA AVATAR ---- */
-.profile-avatar {
-  width: 80px;
-  height: 80px;
+/* Avatar section */
+.avatar-wrapper {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 10px;
+}
+.avatar-circle {
+  width: 60px;
+  height: 60px;
+  background-color: var(--olive-light);
   border-radius: 50%;
-  background-color: var(--olive);
   display: flex;
-  align-items: center;
   justify-content: center;
-  margin-bottom: 14px;
+  align-items: center;
 }
-.profile-avatar svg {
-  stroke: #3d4a24;
-  width: 42px;
-  height: 42px;
+.avatar-circle svg {
+  width: 30px;
+  height: 30px;
+  fill: var(--olive-dark);
 }
 
-/* ---- name & info ---- */
-.match-name {
-  font-weight: 700;
-  font-size: 18px;
+/* Heart and age side by side on bottom-right of avatar */
+.heart-icon {
+  position: absolute;
+  bottom: -2px;
+  right: -6px;
+  transform: translate(0, 0);
+}
+.heart-icon svg {
+  width: 20px;
+  height: 20px;
+  fill: #f5b5bd; /* soft pink heart like Figma */
+}
+.age-number {
+  position: absolute;
+  bottom: 4px;         /* aligned with heart middle */
+  right: -22px;        /* places number just beside heart */
+  font-size: 0.85rem;
+  color: var(--olive-dark);
+  font-weight: 600;
+}
+
+/* Text */
+.profile-name {
+  font-weight: 600;
+  margin-top: 10px;
+  margin-bottom: 2px;
+  font-size: 0.95rem;
+}
+.profile-course {
+  font-size: 0.85rem;
   color: var(--olive-dark);
   margin-bottom: 6px;
 }
-.match-role {
-  font-size: 15px;
-  margin-bottom: 2px;
-}
-.match-int {
-  font-size: 14px;
-  color: #676c59;
-  margin-bottom: 10px;
+
+/* Combined skill box */
+.skill-box {
+  background-color: var(--olive-light);
+  border-radius: 20px;
+  display: inline-block;
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  color: var(--text-main);
+  margin-bottom: 14px;
 }
 
-/* ---- skills ---- */
-.skills-row {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-.skill-tag {
-  background-color: #eaeddf;
-  color: var(--text-dark);
-  border-radius: 999px;
-  padding: 6px 12px;
-  font-size: 13px;
-}
-
-/* ---- button ---- */
-.btn-olive {
-  background-color: var(--olive);
-  color: #fff;
+/* Buttons */
+.match-btn {
+  background-color: var(--olive-dark);
+  color: var(--white);
   border: none;
-  border-radius: 999px;
-  padding: 8px 18px;
-  transition: background-color 0.2s ease;
+  border-radius: 18px;
+  padding: 7px 20px;
+  font-size: 0.8rem;
   font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  display: block;             /* force new line */
+  margin: 8px auto 0;
 }
-.btn-olive:hover {
+.match-btn:hover {
+  background-color: var(--olive);
+}
+.accept-btn {
+  background-color: var(--olive);
+}
+.accept-btn:hover {
   background-color: var(--olive-dark);
 }
 
-/* ---- responsive ---- */
-@media (max-width: 992px) {
-  .matches-grid { grid-template-columns: repeat(2, 1fr); }
+/* How it works */
+.how-it-works {
+  background-color: var(--card-bg);
+  border-radius: 10px;
+  max-width: 600px;
+  margin: 40px auto 0;
+  padding: 20px;
+  text-align: left;
 }
+.how-it-works h3 {
+  color: var(--olive-dark);
+  font-size: 1.05rem;
+  margin-bottom: 10px;
+}
+.how-it-works ul {
+  list-style-type: disc;
+  margin-left: 20px;
+  color: var(--text-main);
+  font-size: 0.9rem;
+}
+.how-it-works li {
+  margin-bottom: 5px;
+}
+
+/* Responsive */
 @media (max-width: 768px) {
-  .matches-grid { grid-template-columns: 1fr; }
+  .profiles-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
+@media (max-width: 500px) {
+  .profiles-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+

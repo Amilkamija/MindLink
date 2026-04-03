@@ -1,90 +1,190 @@
 <?php
-$pageTitle = "Matches - MindLink";
+$pageTitle = "Matches - Mindlink";
 $extra_css = '/assets/css/matches.css';
 require_once __DIR__ . '/../includes/header2.php';
 ?>
+<div class="matches-container">
 
-<h2 class="page-title mb-4">Matches</h2>
+  <div class="section-header">
+    <h2>Strengthen your Connection!</h2>
+    <p>Find potential matches with students you've worked with. Chat, connect, and see if your collaboration can turn into something more!</p>
+  </div>
+  <div class="divider"></div>
 
-<div class="matches-layout">
+  <div class="subheader">Profiles from completed projects:</div>
 
-  <!-- Stats -->
-  <div class="matches-stats">
-    <div class="stat-card"><h3>12</h3><p>Project Matches</p></div>
-    <div class="stat-card"><h3>5</h3><p>Pending Requests</p></div>
-    <div class="stat-card"><h3>8</h3><p>Teams Joined</p></div>
-    <div class="stat-card"><h3>3</h3><p>New Messages</p></div>
+  <div class="profiles-grid">
+    <!-- Mike -->
+    <div class="profile-card">
+      <div class="avatar-wrapper">
+        <div class="avatar-circle">
+          <svg xmlns="[w3.org](http://www.w3.org/2000/svg)" viewBox="0 0 24 24"><path d="M12,12A4,4 0 1,0 8,8A4,4 0 0,0 12,12ZM12,14C9.33,14 
+              4,15.34 4,18V20H20V18C20,15.34 
+              14.67,14 12,14Z"/></svg>
+        </div>
+        <div class="heart-icon">
+          <svg xmlns="[w3.org](http://www.w3.org/2000/svg)" viewBox="0 0 24 24"><path 
+          d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5
+          c0-2.5 1.99-4.5 4.5-4.5c1.74 0 3.41 1.01 
+          4.22 2.61C11.09 5.01 12.76 4 14.5 4
+          C17.01 4 19 6 19 8.5c0 3.78-3.4
+          6.86-8.55 11.54L12 21.35z"/></svg>
+        </div>
+        <span class="age-number">22</span>
+      </div>
+      <div class="profile-name">Mike Smith</div>
+      <div class="profile-course">Computer Science</div>
+      <div class="skill-box">Web Project · PHP · MySQL</div>
+      <button class="match-btn">MATCH!</button>
+    </div>
+
+    <!-- Jane -->
+    <div class="profile-card">
+      <div class="avatar-wrapper">
+        <div class="avatar-circle">
+          <svg xmlns="[w3.org](http://www.w3.org/2000/svg)" viewBox="0 0 24 24">
+            <path d="M12,12A4,4 0 1,0 8,8A4,4 0 0,0 
+            12,12ZM12,14C9.33,14 
+            4,15.34 4,18V20H20V18C20,15.34 
+            14.67,14 12,14Z"/>
+          </svg>
+        </div>
+        <div class="heart-icon">
+          <svg xmlns="[w3.org](http://www.w3.org/2000/svg)" viewBox="0 0 24 24"><path 
+          d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5
+          c0-2.5 1.99-4.5 4.5-4.5c1.74 0 3.41 1.01 
+          4.22 2.61C11.09 5.01 12.76 4 14.5 4
+          C17.01 4 19 6 19 8.5c0 3.78-3.4
+          6.86-8.55 11.54L12 21.35z"/></svg>
+        </div>
+        <span class="age-number">21</span>
+      </div>
+      <div class="profile-name">Jane Smith</div>
+      <div class="profile-course">Information Technology</div>
+      <div class="skill-box">Web Project · PHP · MySQL</div>
+      <button class="match-btn">MATCH!</button>
+    </div>
+
+    <!-- John -->
+    <div class="profile-card">
+      <div class="avatar-wrapper">
+        <div class="avatar-circle">
+          <svg xmlns="[w3.org](http://www.w3.org/2000/svg)" viewBox="0 0 24 24">
+            <path d="M12,12A4,4 0 1,0 8,8A4,4 0 0,0
+            12,12ZM12,14C9.33,14 
+            4,15.34 4,18V20H20V18C20,15.34
+            14.67,14 12,14Z"/>
+          </svg>
+        </div>
+        <div class="heart-icon">
+          <svg xmlns="[w3.org](http://www.w3.org/2000/svg)" viewBox="0 0 24 24"><path 
+          d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5
+          c0-2.5 1.99-4.5 4.5-4.5c1.74 0 3.41 1.01 
+          4.22 2.61C11.09 5.01 12.76 4 14.5 4
+          C17.01 4 19 6 19 8.5c0 3.78-3.4
+          6.86-8.55 11.54L12 21.35z"/></svg>
+        </div>
+        <span class="age-number">24</span>
+      </div>
+      <div class="profile-name">John Doe</div>
+      <div class="profile-course">Games Development</div>
+      <div class="skill-box">Web Project · PHP · MySQL</div>
+      <button class="match-btn">MATCH!</button>
+    </div>
   </div>
 
-  <!-- Match Grid -->
-  <div class="matches-grid">
+  <div class="divider"></div>
 
-    <!-- Ahmed -->
-    <div class="match-card">
-      <div class="profile-avatar">
-        <svg width="42" height="42" viewBox="0 0 24 24" fill="none"
-             stroke="#3d4a24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="7" r="4"></circle>
-          <path d="M5 20c0-4 4-6 7-6s7 2 7 6"></path>
-        </svg>
+  <div class="subheader">Match Requests:</div>
+
+  <div class="profiles-grid">
+    <div class="profile-card">
+      <div class="avatar-wrapper">
+        <div class="avatar-circle">
+          <svg xmlns="[w3.org](http://www.w3.org/2000/svg)" viewBox="0 0 24 24"><path 
+            d="M12,12A4,4 0 1,0 8,8A4,4 0 0,0 
+            12,12ZM12,14C9.33,14 
+            4,15.34 4,18V20H20V18C20,15.34 
+            14.67,14 12,14Z"/></svg>
+        </div>
+        <div class="heart-icon"><svg xmlns="[w3.org](http://www.w3.org/2000/svg)" viewBox="0 0 24 24"><path 
+            d="M12 21.35l-1.45-1.32C5.4 15.36 2 
+            12.28 2 8.5c0-2.5 1.99-4.5 
+            4.5-4.5c1.74 0 3.41 1.01 
+            4.22 2.61C11.09 5.01 12.76 
+            4 14.5 4C17.01 4 19 6 19 8.5
+            c0 3.78-3.4 6.86-8.55 
+            11.54L12 21.35z"/></svg></div>
+        <span class="age-number">20</span>
       </div>
-      <h5 class="match-name">Ahmed</h5>
-      <p class="match-role">Frontend Development</p>
-      <p class="match-int">Interest: Web Projects</p>
-      <div class="skills-row">
-        <span class="skill-tag">HTML</span>
-        <span class="skill-tag">CSS</span>
-        <span class="skill-tag">React</span>
-      </div>
-      <div class="match-btn">
-        <button class="btn btn-olive w-100">View Profile</button>
-      </div>
+      <div class="profile-name">Lucy Smith</div>
+      <div class="profile-course">Cyber Security</div>
+      <div class="skill-box">Software Testing · Jira · Trello</div>
+      <button class="match-btn accept-btn">ACCEPT</button>
     </div>
 
-    <!-- Fatima -->
-    <div class="match-card">
-      <div class="profile-avatar">
-        <svg width="42" height="42" viewBox="0 0 24 24" fill="none"
-             stroke="#3d4a24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="7" r="4"></circle>
-          <path d="M5 20c0-4 4-6 7-6s7 2 7 6"></path>
-        </svg>
+    <div class="profile-card">
+      <div class="avatar-wrapper">
+        <div class="avatar-circle">
+          <svg xmlns="[w3.org](http://www.w3.org/2000/svg)" viewBox="0 0 24 24"><path 
+            d="M12,12A4,4 0 1,0 8,8A4,4 0 0,0 
+            12,12ZM12,14C9.33,14 
+            4,15.34 4,18V20H20V18C20,15.34 
+            14.67,14 12,14Z"/></svg>
+        </div>
+        <div class="heart-icon"><svg xmlns="[w3.org](http://www.w3.org/2000/svg)" viewBox="0 0 24 24"><path 
+            d="M12 21.35l-1.45-1.32C5.4 
+            15.36 2 12.28 2 8.5c0-2.5 
+            1.99-4.5 4.5-4.5c1.74 0 
+            3.41 1.01 4.22 2.61
+            C11.09 5.01 12.76 4 14.5 
+            4C17.01 4 19 6 19 8.5
+            c0 3.78-3.4 6.86-8.55
+            11.54L12 21.35z"/></svg></div>
+        <span class="age-number">19</span>
       </div>
-      <h5 class="match-name">Fatima</h5>
-      <p class="match-role">UI / UX Design</p>
-      <p class="match-int">Interest: Mobile Applications</p>
-      <div class="skills-row">
-        <span class="skill-tag">Figma</span>
-        <span class="skill-tag">Adobe XD</span>
-        <span class="skill-tag">Branding</span>
-      </div>
-      <div class="match-btn">
-        <button class="btn btn-olive w-100">View Profile</button>
-      </div>
+      <div class="profile-name">Sarah Doe</div>
+      <div class="profile-course">Computer Science</div>
+      <div class="skill-box">Website Design · HTML · CSS</div>
+      <button class="match-btn accept-btn">ACCEPT</button>
     </div>
 
-    <!-- David -->
-    <div class="match-card">
-      <div class="profile-avatar">
-        <svg width="42" height="42" viewBox="0 0 24 24" fill="none"
-             stroke="#3d4a24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="7" r="4"></circle>
-          <path d="M5 20c0-4 4-6 7-6s7 2 7 6"></path>
-        </svg>
+    <div class="profile-card">
+      <div class="avatar-wrapper">
+        <div class="avatar-circle">
+          <svg xmlns="[w3.org](http://www.w3.org/2000/svg)" viewBox="0 0 24 24"><path 
+            d="M12,12A4,4 0 1,0 8,8A4,4 0 0,0 
+            12,12ZM12,14C9.33,14 
+            4,15.34 4,18V20H20V18C20,15.34 
+            14.67,14 12,14Z"/></svg>
+        </div>
+        <div class="heart-icon"><svg xmlns="[w3.org](http://www.w3.org/2000/svg)" viewBox="0 0 24 24"><path 
+            d="M12 21.35l-1.45-1.32C5.4 
+            15.36 2 12.28 2 8.5c0-2.5 
+            1.99-4.5 4.5-4.5c1.74 0 
+            3.41 1.01 4.22 2.61
+            C11.09 5.01 12.76 4 14.5 
+            4C17.01 4 19 6 19 8.5
+            c0 3.78-3.4 6.86-8.55
+            11.54L12 21.35z"/></svg></div>
+        <span class="age-number">21</span>
       </div>
-      <h5 class="match-name">David</h5>
-      <p class="match-role">Backend Development</p>
-      <p class="match-int">Interest: Databases & APIs</p>
-      <div class="skills-row">
-        <span class="skill-tag">Node.js</span>
-        <span class="skill-tag">Express</span>
-        <span class="skill-tag">MongoDB</span>
-      </div>
-      <div class="match-btn">
-        <button class="btn btn-olive w-100">View Profile</button>
-      </div>
+      <div class="profile-name">Jane Doe</div>
+      <div class="profile-course">Business</div>
+      <div class="skill-box">Project Management · Trello · Kanban</div>
+      <button class="match-btn accept-btn">ACCEPT</button>
     </div>
-
   </div>
+
+  <div class="how-it-works">
+    <h3>How does it work?</h3>
+    <ul>
+      <li>Review profiles of previous teammates.</li>
+      <li>Match with a profile to indicate potential interest.</li>
+      <li>If they also match with you, start chatting and get to know each other.</li>
+    </ul>
+  </div>
+
 </div>
-<?php include __DIR__ . '/../includes/footer.php'; ?>
+
+<?php require_once __DIR__ . '/../includes/footer.php'; ?>
