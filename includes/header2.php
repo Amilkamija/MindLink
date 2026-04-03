@@ -1,7 +1,6 @@
 <?php
-if (session_status() === PHP_SESSION_NONE){
-session_start();
-} ?>
+require_once __DIR__ . '/../config/session.php';
+?>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -77,6 +76,11 @@ session_start();
     <li class="nav-item">
         <a class="nav-link" href="/pages/settings.php">Settings</a>
     </li>
+    <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
+    <li class="nav-item">
+        <a class="nav-link" href="/pages/admin.php">Admin</a>
+    </li>
+    <?php endif; ?>
     </ul>
 </div>
 <div class="main-content">
