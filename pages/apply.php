@@ -1,84 +1,310 @@
 <?php
 $extra_css = '/assets/css/apply.css';
 require_once __DIR__ . '/../includes/header2.php';
+require_once __DIR__ . '/../config/db.php';
+
+if (!isset($_SESSION['user_id'])) {
+    header("Location: /pages/login.php");
+    exit();
+}
+
+$current_user_id = (int)$_SESSION['user_id'];
+
+$project_id = isset($_GET['project_id']) ? (int)$_GET['project_id'] : 0;
+
+if ($project_id <= 0) {
+    header("Location: /pages/projects.php");
+    exit();
+}
+
+$success = '';
+$error = '';
+
+$project_sql = "
+    SELECT 
+        p.project_id,
+        p.owner_id,
+        p.title,
+        p.description,
+        p.team_size,
+        p.deadline,
+        p.status,
+        u.course,
+        u.year,
+        u.email
+    FROM Projects p
+    JOIN Users u ON p.owner_id = u.user_id
+    WHERE p.project_id = ?
+    LIMIT 1
+";
+
+$project_stmt = $conn->prepare($project_sql);
+if (!$project_stmt) {
+    die("Prepare failed: " . $conn->error);
+}
+
+$project_stmt->bind_param("i", $project_id);
+$project_stmt->execute();
+$project_result = $project_stmt->get_result();
+$project = $project_result->fetch_assoc();
+$project_stmt->close();
+
+if (!$project) {
+    header("Location: /pages/projects.php");
+    exit();
+}
+
+if ((int)$project['owner_id'] === $current_user_id) {
+    $error = "You cannot apply to your own project.";
+}
+
+if ($project['status'] === 'completed') {
+    $error = "This project has already been completed and is no longer accepting applications.";
+}
+
+$roles = [];
+$roles_sql = "
+    SELECT role_id, title, description, filled
+    FROM Roles
+    WHERE project_id = ?
+    ORDER BY role_id ASC
+";
+
+$roles_stmt = $conn->prepare($roles_sql);
+if (!$roles_stmt) {
+    die("Prepare failed: " . $conn->error);
+}
+
+$roles_stmt->bind_param("i", $project_id);
+$roles_stmt->execute();
+$roles_result = $roles_stmt->get_result();
+
+while ($row = $roles_result->fetch_assoc()) {
+    $roles[] = $row;
+}
+$roles_stmt->close();
+
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($error)) {
+    $selected_role_id = isset($_POST['selected_role']) ? (int)$_POST['selected_role'] : 0;
+    $application_message = trim($_POST['application_message'] ?? '');
+
+    if ($selected_role_id <= 0) {
+        $error = "Please choose a role.";
+    } else {
+        
+        $check_role_sql = "
+            SELECT role_id, title, filled
+            FROM Roles
+            WHERE role_id = ? AND project_id = ?
+            LIMIT 1
+        ";
+
+        $check_role_stmt = $conn->prepare($check_role_sql);
+        if (!$check_role_stmt) {
+            die("Prepare failed: " . $conn->error);
+        }
+
+        $check_role_stmt->bind_param("ii", $selected_role_id, $project_id);
+        $check_role_stmt->execute();
+        $check_role_result = $check_role_stmt->get_result();
+        $selected_role = $check_role_result->fetch_assoc();
+        $check_role_stmt->close();
+
+        if (!$selected_role) {
+            $error = "Invalid role selected.";
+        } elseif ((int)$selected_role['filled'] === 1) {
+            $error = "That role has already been filled.";
+        } else {
+            
+            $duplicate_sql = "
+                SELECT application_id
+                FROM Applications
+                WHERE project_id = ? AND role_id = ? AND applicant_id = ?
+                LIMIT 1
+            ";
+
+            $duplicate_stmt = $conn->prepare($duplicate_sql);
+            if (!$duplicate_stmt) {
+                die("Prepare failed: " . $conn->error);
+            }
+
+            $duplicate_stmt->bind_param("iii", $project_id, $selected_role_id, $current_user_id);
+            $duplicate_stmt->execute();
+            $duplicate_result = $duplicate_stmt->get_result();
+            $already_applied = $duplicate_result->fetch_assoc();
+            $duplicate_stmt->close();
+
+            if ($already_applied) {
+                $error = "You have already applied for this role.";
+            } else {
+                $insert_sql = "
+                    INSERT INTO Applications (project_id, role_id, applicant_id, message, status, applied_at)
+                    VALUES (?, ?, ?, ?, 'pending', NOW())
+                ";
+
+                $insert_stmt = $conn->prepare($insert_sql);
+                if (!$insert_stmt) {
+                    die("Prepare failed: " . $conn->error);
+                }
+
+                $insert_stmt->bind_param("iiis", $project_id, $selected_role_id, $current_user_id, $application_message);
+
+                if ($insert_stmt->execute()) {
+                    $success = "Your application has been submitted successfully.";
+                } else {
+                    $error = "Failed to submit application. Please try again.";
+                }
+
+                $insert_stmt->close();
+            }
+        }
+    }
+}
+
+function formatStatus($status) {
+    switch ($status) {
+        case 'open':
+            return 'Open for applications';
+        case 'in_progress':
+            return 'In Progress';
+        case 'completed':
+            return 'Completed';
+        default:
+            return ucfirst(str_replace('_', ' ', $status));
+    }
+}
+
+function statusClass($status) {
+    switch ($status) {
+        case 'open':
+            return 'status-open';
+        case 'in_progress':
+            return 'status-progress';
+        case 'completed':
+            return 'status-completed';
+        default:
+            return '';
+    }
+}
 ?>
 
 <div class="col-lg-10 content-area">
-  <div class="apply-top">
-    <div class="section-pill apply-pill">Apply to Project</div>
-  </div>
-
-  <div class="section-line"></div>
-
-  <div class="apply-project-card">
-    <div class="apply-project-header">
-      <h2>CS4084 - Mobile App Dev</h2>
-      <span>Year 3</span>
+    <div class="apply-top">
+        <div class="section-pill apply-pill">Apply to Project</div>
     </div>
 
-    <div class="apply-project-body">
-      <p><strong>Task:</strong> This project focuses on building a mobile application for student collaboration</p>
-      <p><strong>Status:</strong> <span class="status status-open">Open for applications</span></p>
-      <p><strong>Team Size:</strong> 4</p>
-      <p><strong>Deadline:</strong> 15/04/2026</p>
-      <p><strong>Tags:</strong> Java, Android Studio, UI Design, Team Collaboration</p>
-    </div>
-  </div>
+    <div class="section-line"></div>
 
-  <div class="section-line mt-4"></div>
+    <?php if (!empty($success)): ?>
+        <div class="alert alert-success"><?php echo htmlspecialchars($success, ENT_QUOTES, 'UTF-8'); ?></div>
+    <?php endif; ?>
 
-  <div class="apply-section-title">Available Roles</div>
+    <?php if (!empty($error)): ?>
+        <div class="alert alert-danger"><?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?></div>
+    <?php endif; ?>
 
-  <div class="roles-grid">
-    <div class="role-card">
-      <div class="role-card-title">Database Support</div>
-      <p>MySQL and Database implementation support.</p>
-      <div class="role-status">Status: Open</div>
-      <button type="button" class="select-role-btn">Select</button>
-    </div>
+    <div class="apply-project-card">
+        <div class="apply-project-header">
+            <h2><?php echo htmlspecialchars($project['title'], ENT_QUOTES, 'UTF-8'); ?></h2>
+            <span>
+                <?php echo htmlspecialchars($project['course'], ENT_QUOTES, 'UTF-8'); ?> - Year <?php echo (int)$project['year']; ?>
+            </span>
+        </div>
 
-    <div class="role-card">
-      <div class="role-card-title">Testing and Debugging</div>
-      <p>Handle database testing and debugging MySQL code.</p>
-      <div class="role-status">Status: Open</div>
-      <button type="button" class="select-role-btn">Select</button>
-    </div>
-
-    <div class="role-card">
-      <div class="role-card-title">Documentation</div>
-      <p>Database design documentation and tables descriptions</p>
-      <div class="role-status">Status: Open</div>
-      <button type="button" class="select-role-btn">Select</button>
-    </div>
-  </div>
-
-  <div class="section-line mt-4"></div>
-
-  <form action="#" method="POST" class="application-form-card">
-    <div class="form-card-title">Your Application</div>
-
-    <div class="application-grid">
-      <div class="field-group">
-        <label for="selected_role">Selected Role</label>
-        <select id="selected_role" name="selected_role">
-          <option value="">Choose a role</option>
-          <option>Database Support</option>
-          <option>Testing and Debugging</option>
-          <option>Documentation</option>
-        </select>
-      </div>
-
-      <div class="field-group full-width">
-        <label for="application_message">Why do you want to join this project?</label>
-        <textarea id="application_message" name="application_message" rows="6" placeholder="Write a short message to the project owner..."></textarea>
-      </div>
+        <div class="apply-project-body">
+            <p><strong>Task:</strong> <?php echo htmlspecialchars($project['description'], ENT_QUOTES, 'UTF-8'); ?></p>
+            <p>
+                <strong>Status:</strong>
+                <span class="status <?php echo statusClass($project['status']); ?>">
+                    <?php echo htmlspecialchars(formatStatus($project['status']), ENT_QUOTES, 'UTF-8'); ?>
+                </span>
+            </p>
+            <p><strong>Team Size:</strong> <?php echo (int)$project['team_size']; ?></p>
+            <p><strong>Deadline:</strong> <?php echo htmlspecialchars($project['deadline'], ENT_QUOTES, 'UTF-8'); ?></p>
+            <p><strong>Owner:</strong> <?php echo htmlspecialchars($project['email'], ENT_QUOTES, 'UTF-8'); ?></p>
+        </div>
     </div>
 
-    <div class="application-actions">
-      <a href="/pages/projects.php" class="cancel-apply-btn">Cancel</a>
-      <button type="submit" class="submit-application-btn">Submit Application</button>
+    <div class="section-line mt-4"></div>
+
+    <div class="apply-section-title">Available Roles</div>
+
+    <div class="roles-grid">
+        <?php if (!empty($roles)): ?>
+            <?php foreach ($roles as $role): ?>
+                <div class="role-card">
+                    <div class="role-card-title"><?php echo htmlspecialchars($role['title'], ENT_QUOTES, 'UTF-8'); ?></div>
+                    <p><?php echo htmlspecialchars($role['description'], ENT_QUOTES, 'UTF-8'); ?></p>
+
+                    <?php if ((int)$role['filled'] === 1): ?>
+                        <div class="role-status">Status: Filled</div>
+                        <button type="button" class="select-role-btn" disabled>Unavailable</button>
+                    <?php else: ?>
+                        <div class="role-status">Status: Open</div>
+                        <button
+                            type="button"
+                            class="select-role-btn"
+                            onclick="document.getElementById('selected_role').value='<?php echo (int)$role['role_id']; ?>';"
+                        >
+                            Select
+                        </button>
+                    <?php endif; ?>
+                </div>
+            <?php endforeach; ?>
+        <?php else: ?>
+            <div class="role-card">
+                <div class="role-card-title">No roles available</div>
+                <p>This project does not currently have any roles listed.</p>
+                <div class="role-status">Status: Unavailable</div>
+            </div>
+        <?php endif; ?>
     </div>
-  </form>
+
+    <div class="section-line mt-4"></div>
+
+    <form action="/pages/apply.php?project_id=<?php echo (int)$project_id; ?>" method="POST" class="application-form-card">
+        <div class="form-card-title">Your Application</div>
+
+        <div class="application-grid">
+            <div class="field-group">
+                <label for="selected_role">Selected Role</label>
+                <select id="selected_role" name="selected_role" required>
+                    <option value="">Choose a role</option>
+                    <?php foreach ($roles as $role): ?>
+                        <?php if ((int)$role['filled'] === 0): ?>
+                            <option value="<?php echo (int)$role['role_id']; ?>" <?php echo (isset($_POST['selected_role']) && (int)$_POST['selected_role'] === (int)$role['role_id']) ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($role['title'], ENT_QUOTES, 'UTF-8'); ?>
+                            </option>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div class="field-group full-width">
+                <label for="application_message">Why do you want to join this project?</label>
+                <textarea
+                    id="application_message"
+                    name="application_message"
+                    rows="6"
+                    placeholder="Write a short message to the project owner..."
+                ><?php echo htmlspecialchars($_POST['application_message'] ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
+            </div>
+        </div>
+
+        <div class="application-actions">
+            <a href="/pages/projects.php" class="cancel-apply-btn">Cancel</a>
+
+            <?php if ($project['status'] === 'completed' || (int)$project['owner_id'] === $current_user_id || empty($roles)): ?>
+                <button type="button" class="submit-application-btn" disabled>Submit Application</button>
+            <?php else: ?>
+                <button type="submit" class="submit-application-btn">Submit Application</button>
+            <?php endif; ?>
+        </div>
+    </form>
 </div>
 
-<?php require_once __DIR__ . '/../includes/footer.php'; ?>
+<?php
+$conn->close();
+require_once __DIR__ . '/../includes/footer.php';
+?>
