@@ -5,9 +5,9 @@ $password = getenv('DB_PASS') ?: 'group21projectA';
 $database = getenv('DB_NAME') ?: 'if0_41345101_mindlink_db';
 $port     = (int)(getenv('DB_PORT') ?: 3306);
 
-$conn = new mysqli("sql311.infinityfree.com", "if0_41345101", "group21projectA", "if0_41345101_mindlink_db");
+$conn = new mysqli($host, $username, $password, $database, $port);
 
 if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+    die("Unable to connect to the database. Please try again later.");
 }
 ?>

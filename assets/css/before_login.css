@@ -1,0 +1,252 @@
+/* contact */
+
+
+
+
+
+
+
+/* faq */
+
+
+
+
+
+
+/*sign up */
+main {
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.signup-card {
+    background-color: #E8E4DC;
+    border-radius: 20px;
+    padding: 25px 35px;
+    text-align: center;
+    border: 1.0px solid #57673E;
+    
+}
+
+.signup-title {
+    font-weight: 700;
+    color: #354C2B;
+    margin-bottom: 24px;
+}
+
+.signup-text {
+    width: 100%;
+    padding: 4px 16px;
+    margin-bottom: 16px;
+    border-radius: 50px;
+    border: 1.0px solid #57673E;
+    background-color: #F5F2EC;
+    text-align: center;
+    outline: none;
+    font-size: 0.85rem;
+}
+
+.signup-text:focus {
+    border-color: #859C62;
+    box-shadow: 0 0 0 2px rgba(133, 156, 98, 0.2);
+}
+
+.already-account {
+    font-size: 0.85rem;
+    color: #354C2B;
+    margin-bottom: 16px;
+}
+
+.already-account .login {
+    font-weight: 700;
+    color: #354C2B;
+    text-decoration: none;
+}
+
+.signup-btn {
+    width: 100%;
+    padding: 8px;
+    background-color: #57673E;
+    color: #FCF9F2;
+    border: none;
+    border-radius: 50px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+
+.signup-btn:hover {
+    background-color: #354C2B;
+}
+
+/* login*/
+main {
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.login-card {
+    background-color: #E8E4DC;
+    border-radius: 20px;
+    padding: 25px 35px;
+    text-align: center;
+    border: 1.0px solid #57673E;
+}
+.login-title {
+    font-weight: 700;
+    color: #354C2B;
+    margin-bottom: 24px;
+}
+.login-text {
+    width: 100%;
+    padding: 4px 16px;
+    margin-bottom: 16px;
+    border-radius: 50px;
+    border: 1.0px solid #57673E;
+    background-color: #F5F2EC;
+    text-align: center;
+    outline: none;
+    font-size: 0.85rem;
+}
+.login-text:focus {
+    border-color: #859C62;
+    box-shadow: 0 0 0 2px rgba(133, 156, 98, 0.2);
+}
+.forgot-password {
+    font-size: 0.85rem;
+    color: #354C2B;
+    margin-bottom: 16px;
+}
+.forgot-password a {
+    font-weight: 500;
+    color: #354C2B !important;
+    text-decoration: none !important;
+}
+.no-account {
+    font-size: 0.85rem;
+    color: #354C2B;
+    margin-bottom: 16px;
+}
+.no-account .signup {
+    font-weight: 700;
+    color: #354C2B !important;
+    text-decoration: none !important;
+}
+.login-btn {
+    width: 80%;
+    padding: 8px;
+    background-color: #57673E;
+    color: #FCF9F2;
+    border: none;
+    border-radius: 50px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+.login-btn:hover {
+    background-color: #43512B;
+}
+
+/* forgot password */
+main {
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.forgot-card {
+    background-color: #E8E4DC;
+    border-radius: 20px;
+    padding: 25px 35px;
+    text-align: center;
+    border: 1.5px solid #b5b0a5;
+}
+
+.forgot-title {
+    font-weight: 700;
+    color: #354C2B;
+    margin-bottom: 12px;
+}
+
+.forgot-desc {
+    font-size: 0.85rem;
+    color: #354C2B;
+    margin-bottom: 20px;
+}
+
+.forgot-text {
+    width: 80%;
+    padding: 6px 16px;
+    margin-bottom: 16px;
+    border-radius: 50px;
+    border: 1.5px solid #57673E;
+    background-color: #F5F2EC;
+    text-align: center;
+    outline: none;
+    font-size: 0.85rem;
+}
+
+.forgot-text:focus {
+    border-color: #859C62;
+    box-shadow: 0 0 0 2px rgba(133, 156, 98, 0.2);
+}
+
+.sendresetlink-btn {
+    width: 100%;
+    padding: 8px;
+    background-color: #57673E;
+    color: #FCF9F2;
+    border: none;
+    border-radius: 50px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.sendresetlink-btn:hover {
+    background-color: #354C2B;
+}
+
+/*inex(main) */
+
+.title{
+color: #354C2B;
+font-size: 2.0rem !important;
+}
+.subtitle{
+color: #859C62;
+font-size: 1.7rem !important;
+}
+.paragraph{
+ color: #354C2B;
+ font-size: 0.8rem !important;
+}
+.card-1 { background-color: #C6CEBA; border: none; border-radius: 50px !important; min-height: 250px; text-align: left; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);}
+.card-2 { background-color: #859C62; border: none; border-radius: 50px !important; min-height: 250px; color: #FCF9F2; text-align: center;box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);}
+.card-3 { background-color: #C9DFA8; border: none; border-radius: 50px !important; min-height: 250px; text-align: center; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); }
+.card-4 { background-color: #AACD74; border: none; border-radius: 50px !important; min-height: 250px; text-align: center; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); }
+
+.card-title {
+    background-color: #FCF9F2;
+    color: #354C2B;
+    padding: 4px 12px;
+    border-radius: 27px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: block;
+    text-align: center;
+    margin-bottom: 12px;
+    margin-top:10px;
+    justify-content: center;
+}

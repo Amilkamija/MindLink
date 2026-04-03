@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . '/../config/session.php';
 require_once __DIR__ . '/../config/db.php';
 
 $error = '';
@@ -9,7 +9,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password         = $_POST['password'];
     $confirm_password = $_POST['confirm_password'];
 
-    if ($password !== $confirm_password) {
+    if (strlen($password) < 8 || !preg_match('/[^a-zA-Z0-9]/', $password)) {
+        $error = "Password must be at least 8 characters and include at least 1 special character.";
+    } elseif ($password !== $confirm_password) {
         $error = "Passwords do not match!";
     } else {
 
@@ -28,6 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->bind_param("ss", $email, $password_hash);
 
             if ($stmt->execute()) {
+                session_regenerate_id(true);
                 $_SESSION['user_id'] = $conn->insert_id;
                 $_SESSION['role']    = 'user';
                 header("Location: /pages/home.php");
@@ -46,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <main class="container mt-5">
     <div class="row justify-content-center">
-        <div class="col-md-4">
+        <div class="col-md-6">
             <div class="signup-card">
                 <h4 class="signup-title">SIGN UP</h4>
                 <?php if ($error): ?>

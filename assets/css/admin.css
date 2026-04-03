@@ -42,6 +42,19 @@ body {
 
 .admin-right {
   max-width: 290px;
+  margin-top: 230px;
+}
+
+.section-pill {
+  display: inline-block;
+  background-color: #94AC6E;
+  color: #443A23;
+  border-radius: 999px;
+  padding: 6px 16px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-top: 8px;
+  margin-bottom: 14px;
 }
 
 .admin-pill {
@@ -51,10 +64,15 @@ body {
 }
 
 .overview-cards {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
   margin-bottom: 22px;
+  width: calc(100% + 290px + 24px);
+}
+
+.overview-card {
+  flex: 1;
 }
 
 .overview-card {
@@ -195,6 +213,16 @@ body {
 
 .admin-line {
   margin: 18px 0 24px;
+  position: relative;
+}
+
+.admin-line::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 100%;
+  width: calc(290px + 24px);
+  border-top: 1px solid var(--line-color);
 }
 
 .admin-search-row {
@@ -377,7 +405,8 @@ body {
 
 .action-link {
   cursor: pointer;
-  text-decoration: underline;
+  color: inherit;
+  text-decoration: none;
   transition: 0.2s;
 }
 
