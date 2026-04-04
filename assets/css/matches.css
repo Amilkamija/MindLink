@@ -16,6 +16,7 @@ body {
   color: var(--text-main);
   margin: 0;
 }
+
 .matches-container {
   max-width: 1100px;
   margin: 40px auto 60px;
@@ -27,21 +28,25 @@ body {
   text-align: center;
   margin-bottom: 30px;
 }
+
 .section-header h2 {
   font-size: 1.8rem;
   color: var(--olive-dark);
   font-weight: 700;
   margin-bottom: 8px;
 }
+
 .section-header p {
   color: var(--text-muted);
   max-width: 700px;
   margin: 0 auto;
 }
+
 .divider {
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
   margin: 25px 0 35px;
 }
+
 .subheader {
   color: var(--olive-dark);
   font-size: 1.1rem;
@@ -74,6 +79,7 @@ body {
   height: 60px;
   margin: 0 auto 10px;
 }
+
 .avatar-circle {
   width: 60px;
   height: 60px;
@@ -83,6 +89,7 @@ body {
   justify-content: center;
   align-items: center;
 }
+
 .avatar-circle svg {
   width: 30px;
   height: 30px;
@@ -94,17 +101,18 @@ body {
   position: absolute;
   bottom: -2px;
   right: -6px;
-  transform: translate(0, 0);
 }
+
 .heart-icon svg {
   width: 20px;
   height: 20px;
-  fill: #f5b5bd; /* soft pink heart like Figma */
+  fill: #f5b5bd;
 }
+
 .age-number {
   position: absolute;
-  bottom: 4px;         /* aligned with heart middle */
-  right: -22px;        /* places number just beside heart */
+  bottom: 4px;
+  right: -22px;
   font-size: 0.85rem;
   color: var(--olive-dark);
   font-weight: 600;
@@ -117,6 +125,7 @@ body {
   margin-bottom: 2px;
   font-size: 0.95rem;
 }
+
 .profile-course {
   font-size: 0.85rem;
   color: var(--olive-dark);
@@ -145,15 +154,18 @@ body {
   font-weight: 600;
   cursor: pointer;
   transition: background 0.3s ease;
-  display: block;             /* force new line */
+  display: block;
   margin: 8px auto 0;
 }
+
 .match-btn:hover {
   background-color: var(--olive);
 }
+
 .accept-btn {
   background-color: var(--olive);
 }
+
 .accept-btn:hover {
   background-color: var(--olive-dark);
 }
@@ -167,17 +179,20 @@ body {
   padding: 20px;
   text-align: left;
 }
+
 .how-it-works h3 {
   color: var(--olive-dark);
   font-size: 1.05rem;
   margin-bottom: 10px;
 }
+
 .how-it-works ul {
   list-style-type: disc;
   margin-left: 20px;
   color: var(--text-main);
   font-size: 0.9rem;
 }
+
 .how-it-works li {
   margin-bottom: 5px;
 }
@@ -188,10 +203,9 @@ body {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
 @media (max-width: 500px) {
   .profiles-grid {
     grid-template-columns: 1fr;
   }
 }
-
-

@@ -4,11 +4,8 @@ $extra_css = '/assets/css/messages.css';
 require_once __DIR__ . '/../includes/header2.php';
 ?>
 <div class="messages-layout">
-
-    <!-- Left side chat list -->
+    <!-- Left sidebar -->
     <div class="chat-list-panel">
-        <div class="chat-list-title">Messages</div>
-
         <div class="search-box mb-3">
             <input type="text" class="form-control form-control-sm" placeholder="Search messages...">
             <svg class="search-icon" xmlns="[w3.org](http://www.w3.org/2000/svg)" fill="none" viewBox="0 0 24 24" stroke="#626a42" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -22,30 +19,28 @@ require_once __DIR__ . '/../includes/header2.php';
 
         <div class="chat-item">
             <div class="chat-avatar">
-                <svg viewBox="0 0 24 24" stroke="#3d4a24" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <svg xmlns="[w3.org](http://www.w3.org/2000/svg)" viewBox="0 0 24 24" stroke="#3d4a24" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="7" r="4"></circle>
                     <path d="M5 20c0-4 4-6 7-6s7 2 7 6"></path>
                 </svg>
             </div>
             <div class="chat-item-content">
                 <div class="chat-name">CS4084 - Mobile App</div>
-                <div class="chat-preview">John: I’ve updated the document for today...</div>
+                <div class="chat-preview">John: I've updated the document for today...</div>
                 <div class="chat-time">11:15 PM</div>
             </div>
         </div>
 
-        <div class="chat-divider"></div>
-
         <div class="chat-item">
             <div class="chat-avatar">
-                <svg viewBox="0 0 24 24" stroke="#3d4a24" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <svg xmlns="[w3.org](http://www.w3.org/2000/svg)" viewBox="0 0 24 24" stroke="#3d4a24" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="7" r="4"></circle>
                     <path d="M5 20c0-4 4-6 7-6s7 2 7 6"></path>
                 </svg>
             </div>
             <div class="chat-item-content">
                 <div class="chat-name">CS4116 - Software Development</div>
-                <div class="chat-preview">Jane: No problem, I’ll check it later...</div>
+                <div class="chat-preview">Jane: No problem, I'll check it later...</div>
                 <div class="chat-time">4:25 PM</div>
             </div>
         </div>
@@ -57,23 +52,21 @@ require_once __DIR__ . '/../includes/header2.php';
 
         <div class="chat-item">
             <div class="chat-avatar">
-                <svg viewBox="0 0 24 24" stroke="#3d4a24" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <svg xmlns="[w3.org](http://www.w3.org/2000/svg)" viewBox="0 0 24 24" stroke="#3d4a24" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="7" r="4"></circle>
                     <path d="M5 20c0-4 4-6 7-6s7 2 7 6"></path>
                 </svg>
             </div>
             <div class="chat-item-content">
                 <div class="chat-name">Sam Smith</div>
-                <div class="chat-preview">Yes, let’s meet up!</div>
+                <div class="chat-preview">Yes, let's meet up!</div>
                 <div class="chat-time">11:00 AM</div>
             </div>
         </div>
 
-        <div class="chat-divider"></div>
-
         <div class="chat-item">
             <div class="chat-avatar">
-                <svg viewBox="0 0 24 24" stroke="#3d4a24" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <svg xmlns="[w3.org](http://www.w3.org/2000/svg)" viewBox="0 0 24 24" stroke="#3d4a24" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="7" r="4"></circle>
                     <path d="M5 20c0-4 4-6 7-6s7 2 7 6"></path>
                 </svg>
@@ -101,7 +94,7 @@ require_once __DIR__ . '/../includes/header2.php';
                 <div class="message-row">
                     <div class="message-left-wrap">
                         <div class="chat-avatar">
-                            <svg viewBox="0 0 24 24" stroke="#3d4a24" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <svg xmlns="[w3.org](http://www.w3.org/2000/svg)" viewBox="0 0 24 24" stroke="#3d4a24" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                 <circle cx="12" cy="7" r="4"></circle>
                                 <path d="M5 20c0-4 4-6 7-6s7 2 7 6"></path>
                             </svg>
@@ -114,14 +107,14 @@ require_once __DIR__ . '/../includes/header2.php';
                 </div>
 
                 <div class="message-row message-right">
-                    <div class="message-bubble">Yes, I’ll be there!</div>
+                    <div class="message-bubble">Yes, I'll be there!</div>
                     <div class="message-meta">You · 10:55 AM</div>
                 </div>
 
                 <div class="message-row">
                     <div class="message-left-wrap">
                         <div class="chat-avatar">
-                            <svg viewBox="0 0 24 24" stroke="#3d4a24" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <svg xmlns="[w3.org](http://www.w3.org/2000/svg)" viewBox="0 0 24 24" stroke="#3d4a24" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                 <circle cx="12" cy="7" r="4"></circle>
                                 <path d="M5 20c0-4 4-6 7-6s7 2 7 6"></path>
                             </svg>
@@ -136,13 +129,13 @@ require_once __DIR__ . '/../includes/header2.php';
                 <div class="message-row">
                     <div class="message-left-wrap">
                         <div class="chat-avatar">
-                            <svg viewBox="0 0 24 24" stroke="#3d4a24" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <svg xmlns="[w3.org](http://www.w3.org/2000/svg)" viewBox="0 0 24 24" stroke="#3d4a24" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                 <circle cx="12" cy="7" r="4"></circle>
                                 <path d="M5 20c0-4 4-6 7-6s7 2 7 6"></path>
                             </svg>
                         </div>
                         <div>
-                            <div class="message-bubble">I’ve updated the Word doc due for today!</div>
+                            <div class="message-bubble">I've updated the Word doc due for today!</div>
                             <div class="message-meta">John · 1:30 PM</div>
                         </div>
                     </div>

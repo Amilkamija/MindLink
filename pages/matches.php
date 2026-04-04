@@ -3,8 +3,8 @@ $pageTitle = "Matches - Mindlink";
 $extra_css = '/assets/css/matches.css';
 require_once __DIR__ . '/../includes/header2.php';
 ?>
-<div class="matches-container">
 
+<div class="matches-container">
   <div class="section-header">
     <h2>Strengthen your Connection!</h2>
     <p>Find potential matches with students you've worked with. Chat, connect, and see if your collaboration can turn into something more!</p>
@@ -18,17 +18,14 @@ require_once __DIR__ . '/../includes/header2.php';
     <div class="profile-card">
       <div class="avatar-wrapper">
         <div class="avatar-circle">
-          <svg xmlns="[w3.org](http://www.w3.org/2000/svg)" viewBox="0 0 24 24"><path d="M12,12A4,4 0 1,0 8,8A4,4 0 0,0 12,12ZM12,14C9.33,14 
-              4,15.34 4,18V20H20V18C20,15.34 
-              14.67,14 12,14Z"/></svg>
+          <svg xmlns="[w3.org](http://www.w3.org/2000/svg)" viewBox="0 0 24 24">
+            <path d="M12,12A4,4 0 1,0 8,8A4,4 0 0,0 12,12ZM12,14C9.33,14 4,15.34 4,18V20H20V18C20,15.34 14.67,14 12,14Z"/>
+          </svg>
         </div>
         <div class="heart-icon">
-          <svg xmlns="[w3.org](http://www.w3.org/2000/svg)" viewBox="0 0 24 24"><path 
-          d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5
-          c0-2.5 1.99-4.5 4.5-4.5c1.74 0 3.41 1.01 
-          4.22 2.61C11.09 5.01 12.76 4 14.5 4
-          C17.01 4 19 6 19 8.5c0 3.78-3.4
-          6.86-8.55 11.54L12 21.35z"/></svg>
+          <svg xmlns="[w3.org](http://www.w3.org/2000/svg)" viewBox="0 0 24 24">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5c0-2.5 1.99-4.5 4.5-4.5c1.74 0 3.41 1.01 4.22 2.61C11.09 5.01 12.76 4 14.5 4C17.01 4 19 6 19 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+          </svg>
         </div>
         <span class="age-number">22</span>
       </div>
@@ -43,19 +40,13 @@ require_once __DIR__ . '/../includes/header2.php';
       <div class="avatar-wrapper">
         <div class="avatar-circle">
           <svg xmlns="[w3.org](http://www.w3.org/2000/svg)" viewBox="0 0 24 24">
-            <path d="M12,12A4,4 0 1,0 8,8A4,4 0 0,0 
-            12,12ZM12,14C9.33,14 
-            4,15.34 4,18V20H20V18C20,15.34 
-            14.67,14 12,14Z"/>
+            <path d="M12,12A4,4 0 1,0 8,8A4,4 0 0,0 12,12ZM12,14C9.33,14 4,15.34 4,18V20H20V18C20,15.34 14.67,14 12,14Z"/>
           </svg>
         </div>
         <div class="heart-icon">
-          <svg xmlns="[w3.org](http://www.w3.org/2000/svg)" viewBox="0 0 24 24"><path 
-          d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5
-          c0-2.5 1.99-4.5 4.5-4.5c1.74 0 3.41 1.01 
-          4.22 2.61C11.09 5.01 12.76 4 14.5 4
-          C17.01 4 19 6 19 8.5c0 3.78-3.4
-          6.86-8.55 11.54L12 21.35z"/></svg>
+          <svg xmlns="[w3.org](http://www.w3.org/2000/svg)" viewBox="0 0 24 24">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5c0-2.5 1.99-4.5 4.5-4.5c1.74 0 3.41 1.01 4.22 2.61C11.09 5.01 12.76 4 14.5 4C17.01 4 19 6 19 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+          </svg>
         </div>
         <span class="age-number">21</span>
       </div>
@@ -70,19 +61,13 @@ require_once __DIR__ . '/../includes/header2.php';
       <div class="avatar-wrapper">
         <div class="avatar-circle">
           <svg xmlns="[w3.org](http://www.w3.org/2000/svg)" viewBox="0 0 24 24">
-            <path d="M12,12A4,4 0 1,0 8,8A4,4 0 0,0
-            12,12ZM12,14C9.33,14 
-            4,15.34 4,18V20H20V18C20,15.34
-            14.67,14 12,14Z"/>
+            <path d="M12,12A4,4 0 1,0 8,8A4,4 0 0,0 12,12ZM12,14C9.33,14 4,15.34 4,18V20H20V18C20,15.34 14.67,14 12,14Z"/>
           </svg>
         </div>
         <div class="heart-icon">
-          <svg xmlns="[w3.org](http://www.w3.org/2000/svg)" viewBox="0 0 24 24"><path 
-          d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5
-          c0-2.5 1.99-4.5 4.5-4.5c1.74 0 3.41 1.01 
-          4.22 2.61C11.09 5.01 12.76 4 14.5 4
-          C17.01 4 19 6 19 8.5c0 3.78-3.4
-          6.86-8.55 11.54L12 21.35z"/></svg>
+          <svg xmlns="[w3.org](http://www.w3.org/2000/svg)" viewBox="0 0 24 24">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5c0-2.5 1.99-4.5 4.5-4.5c1.74 0 3.41 1.01 4.22 2.61C11.09 5.01 12.76 4 14.5 4C17.01 4 19 6 19 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+          </svg>
         </div>
         <span class="age-number">24</span>
       </div>
@@ -98,23 +83,19 @@ require_once __DIR__ . '/../includes/header2.php';
   <div class="subheader">Match Requests:</div>
 
   <div class="profiles-grid">
+    <!-- Lucy -->
     <div class="profile-card">
       <div class="avatar-wrapper">
         <div class="avatar-circle">
-          <svg xmlns="[w3.org](http://www.w3.org/2000/svg)" viewBox="0 0 24 24"><path 
-            d="M12,12A4,4 0 1,0 8,8A4,4 0 0,0 
-            12,12ZM12,14C9.33,14 
-            4,15.34 4,18V20H20V18C20,15.34 
-            14.67,14 12,14Z"/></svg>
+          <svg xmlns="[w3.org](http://www.w3.org/2000/svg)" viewBox="0 0 24 24">
+            <path d="M12,12A4,4 0 1,0 8,8A4,4 0 0,0 12,12ZM12,14C9.33,14 4,15.34 4,18V20H20V18C20,15.34 14.67,14 12,14Z"/>
+          </svg>
         </div>
-        <div class="heart-icon"><svg xmlns="[w3.org](http://www.w3.org/2000/svg)" viewBox="0 0 24 24"><path 
-            d="M12 21.35l-1.45-1.32C5.4 15.36 2 
-            12.28 2 8.5c0-2.5 1.99-4.5 
-            4.5-4.5c1.74 0 3.41 1.01 
-            4.22 2.61C11.09 5.01 12.76 
-            4 14.5 4C17.01 4 19 6 19 8.5
-            c0 3.78-3.4 6.86-8.55 
-            11.54L12 21.35z"/></svg></div>
+        <div class="heart-icon">
+          <svg xmlns="[w3.org](http://www.w3.org/2000/svg)" viewBox="0 0 24 24">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5c0-2.5 1.99-4.5 4.5-4.5c1.74 0 3.41 1.01 4.22 2.61C11.09 5.01 12.76 4 14.5 4C17.01 4 19 6 19 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+          </svg>
+        </div>
         <span class="age-number">20</span>
       </div>
       <div class="profile-name">Lucy Smith</div>
@@ -123,24 +104,19 @@ require_once __DIR__ . '/../includes/header2.php';
       <button class="match-btn accept-btn">ACCEPT</button>
     </div>
 
+    <!-- Sarah -->
     <div class="profile-card">
       <div class="avatar-wrapper">
         <div class="avatar-circle">
-          <svg xmlns="[w3.org](http://www.w3.org/2000/svg)" viewBox="0 0 24 24"><path 
-            d="M12,12A4,4 0 1,0 8,8A4,4 0 0,0 
-            12,12ZM12,14C9.33,14 
-            4,15.34 4,18V20H20V18C20,15.34 
-            14.67,14 12,14Z"/></svg>
+          <svg xmlns="[w3.org](http://www.w3.org/2000/svg)" viewBox="0 0 24 24">
+            <path d="M12,12A4,4 0 1,0 8,8A4,4 0 0,0 12,12ZM12,14C9.33,14 4,15.34 4,18V20H20V18C20,15.34 14.67,14 12,14Z"/>
+          </svg>
         </div>
-        <div class="heart-icon"><svg xmlns="[w3.org](http://www.w3.org/2000/svg)" viewBox="0 0 24 24"><path 
-            d="M12 21.35l-1.45-1.32C5.4 
-            15.36 2 12.28 2 8.5c0-2.5 
-            1.99-4.5 4.5-4.5c1.74 0 
-            3.41 1.01 4.22 2.61
-            C11.09 5.01 12.76 4 14.5 
-            4C17.01 4 19 6 19 8.5
-            c0 3.78-3.4 6.86-8.55
-            11.54L12 21.35z"/></svg></div>
+        <div class="heart-icon">
+          <svg xmlns="[w3.org](http://www.w3.org/2000/svg)" viewBox="0 0 24 24">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5c0-2.5 1.99-4.5 4.5-4.5c1.74 0 3.41 1.01 4.22 2.61C11.09 5.01 12.76 4 14.5 4C17.01 4 19 6 19 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+          </svg>
+        </div>
         <span class="age-number">19</span>
       </div>
       <div class="profile-name">Sarah Doe</div>
@@ -149,24 +125,19 @@ require_once __DIR__ . '/../includes/header2.php';
       <button class="match-btn accept-btn">ACCEPT</button>
     </div>
 
+    <!-- Jane Doe -->
     <div class="profile-card">
       <div class="avatar-wrapper">
         <div class="avatar-circle">
-          <svg xmlns="[w3.org](http://www.w3.org/2000/svg)" viewBox="0 0 24 24"><path 
-            d="M12,12A4,4 0 1,0 8,8A4,4 0 0,0 
-            12,12ZM12,14C9.33,14 
-            4,15.34 4,18V20H20V18C20,15.34 
-            14.67,14 12,14Z"/></svg>
+          <svg xmlns="[w3.org](http://www.w3.org/2000/svg)" viewBox="0 0 24 24">
+            <path d="M12,12A4,4 0 1,0 8,8A4,4 0 0,0 12,12ZM12,14C9.33,14 4,15.34 4,18V20H20V18C20,15.34 14.67,14 12,14Z"/>
+          </svg>
         </div>
-        <div class="heart-icon"><svg xmlns="[w3.org](http://www.w3.org/2000/svg)" viewBox="0 0 24 24"><path 
-            d="M12 21.35l-1.45-1.32C5.4 
-            15.36 2 12.28 2 8.5c0-2.5 
-            1.99-4.5 4.5-4.5c1.74 0 
-            3.41 1.01 4.22 2.61
-            C11.09 5.01 12.76 4 14.5 
-            4C17.01 4 19 6 19 8.5
-            c0 3.78-3.4 6.86-8.55
-            11.54L12 21.35z"/></svg></div>
+        <div class="heart-icon">
+          <svg xmlns="[w3.org](http://www.w3.org/2000/svg)" viewBox="0 0 24 24">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5c0-2.5 1.99-4.5 4.5-4.5c1.74 0 3.41 1.01 4.22 2.61C11.09 5.01 12.76 4 14.5 4C17.01 4 19 6 19 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+          </svg>
+        </div>
         <span class="age-number">21</span>
       </div>
       <div class="profile-name">Jane Doe</div>
