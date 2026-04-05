@@ -1,0 +1,215 @@
+:root {
+  --olive: #9ca47e;
+  --olive-dark: #626a42;
+  --olive-soft: #e8eadc;
+  --white: #ffffff;
+  --bg-soft: #fafaf6;
+  --border-soft: #dadcc9;
+  --text-dark: #1f1f1f;
+}
+
+/* main wrapper */
+.settings-wrapper {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  background-color: var(--bg-soft);
+  padding: 20px 24px 40px;
+  box-sizing: border-box;
+}
+
+/* title */
+.settings-title {
+  font-size: 26px;
+  font-weight: 600;
+  color: var(--olive-dark);
+  margin-bottom: 22px;
+  text-align: center;
+}
+
+/* grid layout */
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px 24px;
+}
+
+/* card containers */
+.settings-card {
+  background: var(--white);
+  border: 1px solid var(--border-soft);
+  border-radius: 18px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* header */
+.settings-card-header {
+  background: var(--olive);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 10px 16px;
+}
+
+/* body */
+.settings-card-body {
+  padding: 16px 18px 20px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* field inputs */
+.settings-field-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.settings-field-row label {
+  font-size: 14px;
+  color: var(--text-dark);
+}
+.settings-field-row input {
+  width: 160px;
+  height: 28px;
+  border-radius: 999px;
+  border: 1px solid var(--border-soft);
+  background: var(--olive-soft);
+  padding: 4px 12px;
+  font-size: 14px;
+  color: var(--text-dark);
+}
+.settings-field-row input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(156, 164, 126, 0.4);
+}
+
+/* toggles */
+.settings-toggle-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.settings-toggle-row span {
+  font-size: 14px;
+  color: var(--text-dark);
+}
+
+/* switch styling */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 26px;
+}
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.slider {
+  position: absolute;
+  inset: 0;
+  background: #c2c6b0;
+  border-radius: 24px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+.slider:before {
+  content: "";
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  left: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #fff;
+  border-radius: 50%;
+  transition: left 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+.switch input:checked + .slider {
+  background-color: var(--olive-dark);
+}
+.switch input:checked + .slider:before {
+  left: 26px;
+}
+
+/* save button */
+.settings-btn-wrap {
+  text-align: center;
+  margin-top: 16px;
+}
+.settings-save-btn {
+  background: var(--olive);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 8px 20px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+.settings-save-btn:hover {
+  background: var(--olive-dark);
+}
+
+/* support links */
+.settings-support-item {
+  margin-bottom: 10px;
+}
+.settings-support-item a {
+  font-size: 14px;
+  color: var(--olive-dark);
+  text-decoration: none;
+}
+.settings-support-item a:hover {
+  text-decoration: underline;
+}
+
+/* responsive layout */
+@media (max-width: 768px) {
+  .settings-wrapper {
+    padding: 16px 14px 36px;
+  }
+  .settings-title {
+    font-size: 24px;
+  }
+  .settings-field-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .settings-field-row input {
+    width: 100%;
+  }
+  .settings-save-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .settings-card-header {
+    font-size: 13px;
+    padding: 8px 12px;
+  }
+  .settings-title {
+    font-size: 22px;
+  }
+  .settings-grid {
+    gap: 16px;
+  }
+  .switch {
+    width: 44px;
+    height: 22px;
+  }
+  .slider:before {
+    width: 16px;
+    height: 16px;
+  }
+}
