@@ -1,0 +1,211 @@
+:root {
+  --cream-bg: #f8f6ed;
+  --card-bg: #f0efe4;
+  --olive: #a7b18c;
+  --olive-light: #dbe0c6;
+  --olive-dark: #8a936d;
+  --text-main: #333;
+  --text-muted: #666;
+  --white: #ffffff;
+}
+
+/* Base */
+body {
+  background-color: var(--cream-bg);
+  font-family: 'Inter', sans-serif;
+  color: var(--text-main);
+  margin: 0;
+}
+
+.matches-container {
+  max-width: 1100px;
+  margin: 40px auto 60px;
+  padding: 0 20px;
+}
+
+/* Headings */
+.section-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.section-header h2 {
+  font-size: 1.8rem;
+  color: var(--olive-dark);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.section-header p {
+  color: var(--text-muted);
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.divider {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  margin: 25px 0 35px;
+}
+
+.subheader {
+  color: var(--olive-dark);
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 18px;
+}
+
+/* Grid */
+.profiles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+/* Card */
+.profile-card {
+  background-color: var(--card-bg);
+  border-radius: 10px;
+  text-align: center;
+  padding: 16px 12px 34px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  position: relative;
+  min-height: 210px;
+}
+
+/* Avatar section */
+.avatar-wrapper {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 10px;
+}
+
+.avatar-circle {
+  width: 60px;
+  height: 60px;
+  background-color: var(--olive-light);
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.avatar-circle svg {
+  width: 30px;
+  height: 30px;
+  fill: var(--olive-dark);
+}
+
+/* Heart and age side by side on bottom-right of avatar */
+.heart-icon {
+  position: absolute;
+  bottom: -2px;
+  right: -6px;
+}
+
+.heart-icon svg {
+  width: 20px;
+  height: 20px;
+  fill: #f5b5bd;
+}
+
+.age-number {
+  position: absolute;
+  bottom: 4px;
+  right: -22px;
+  font-size: 0.85rem;
+  color: var(--olive-dark);
+  font-weight: 600;
+}
+
+/* Text */
+.profile-name {
+  font-weight: 600;
+  margin-top: 10px;
+  margin-bottom: 2px;
+  font-size: 0.95rem;
+}
+
+.profile-course {
+  font-size: 0.85rem;
+  color: var(--olive-dark);
+  margin-bottom: 6px;
+}
+
+/* Combined skill box */
+.skill-box {
+  background-color: var(--olive-light);
+  border-radius: 20px;
+  display: inline-block;
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  color: var(--text-main);
+  margin-bottom: 14px;
+}
+
+/* Buttons */
+.match-btn {
+  background-color: var(--olive-dark);
+  color: var(--white);
+  border: none;
+  border-radius: 18px;
+  padding: 7px 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  display: block;
+  margin: 8px auto 0;
+}
+
+.match-btn:hover {
+  background-color: var(--olive);
+}
+
+.accept-btn {
+  background-color: var(--olive);
+}
+
+.accept-btn:hover {
+  background-color: var(--olive-dark);
+}
+
+/* How it works */
+.how-it-works {
+  background-color: var(--card-bg);
+  border-radius: 10px;
+  max-width: 600px;
+  margin: 40px auto 0;
+  padding: 20px;
+  text-align: left;
+}
+
+.how-it-works h3 {
+  color: var(--olive-dark);
+  font-size: 1.05rem;
+  margin-bottom: 10px;
+}
+
+.how-it-works ul {
+  list-style-type: disc;
+  margin-left: 20px;
+  color: var(--text-main);
+  font-size: 0.9rem;
+}
+
+.how-it-works li {
+  margin-bottom: 5px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .profiles-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 500px) {
+  .profiles-grid {
+    grid-template-columns: 1fr;
+  }
+}

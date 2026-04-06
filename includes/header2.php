@@ -1,7 +1,12 @@
 <?php
+<<<<<<< backend
 if (session_status() === PHP_SESSION_NONE){
 session_start();
 } ?>
+=======
+require_once __DIR__ . '/../config/session.php';
+?>
+>>>>>>> main
 
 <!DOCTYPE html>
 <html lang="en">
@@ -36,8 +41,12 @@ session_start();
         <button type="submit" class="search-btn"></button>
         </div>
     </form>
+<<<<<<< backend
             <!-- Logout button that triggers the modal instead of logging out-->
             <button class  = "btn btn-logout px-4" data-bs-toggle="modal" data-bs-target =   "#logoutModal">
+=======
+            <button class  = "btn btn-logout px-4" data-bs-toggle="modal" data-bs-target ="#logoutModal">
+>>>>>>> main
                 LOG OUT
             </button>
     </div>
@@ -45,12 +54,19 @@ session_start();
 </div>
 </nav>
 
+<<<<<<< backend
 <!-- Logout Modal -->
+=======
+>>>>>>> main
 <div class="modal fade" id="logoutModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content text-center p-3">
             <p>Are you sure you want to log out?</p>
+<<<<<<< backend
             <div class="d-flex justify-content-center gap-2">
+=======
+            <div class="d-flex justify-content-center gap-3">
+>>>>>>> main
                 <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <a href="/pages/log_out.php" class="btn btn-dark">Log Out</a>
             </div>
@@ -79,6 +95,15 @@ session_start();
     <li class="nav-item">
         <a class="nav-link" href="/pages/settings.php">Settings</a>
     </li>
+    <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
+    <li class="nav-item">
+        <a class="nav-link" href="/pages/admin.php">Admin</a>
+    </li>
+    <?php endif; ?>
     </ul>
 </div>
+<<<<<<< backend
 <div class="main-content"></div>
+=======
+<div class="main-content">
+>>>>>>> main
