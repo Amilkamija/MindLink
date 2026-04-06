@@ -1,5 +1,14 @@
-<?php $extra_css = '/assets/css/index.css'; ?>
-<?php require_once __DIR__ . '/includes/header1.php'; ?>
+<?php
+require_once __DIR__ . '/config/session.php';
+$extra_css = '/assets/css/index.css';
+
+if (isset($_SESSION['user_id'])) {
+    require_once __DIR__ . '/includes/header2.php';
+} else {
+    require_once __DIR__ . '/includes/header1.php';
+}
+?>
+
 
 <main class="container mt-5">
     <br>

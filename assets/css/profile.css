@@ -202,3 +202,68 @@ body {
     max-width: 100%;
   }
 }
+
+.about-me-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.btn-edit-aboutme {
+  padding: 4px 16px;
+  background-color: var(--mid-green);
+  color: #000;
+  border: none;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-edit-aboutme:hover {
+  background-color: var(--dark-green);
+  color: #FCF9F2;
+}
+
+.about-edit-textarea {
+  width: 100%;
+  min-height: 100px;
+  padding: 10px 14px;
+  border: 1px solid var(--line-color);
+  border-radius: 8px;
+  background-color: var(--bg-color);
+  color: var(--dark-green);
+  font-family: inherit;
+  font-size: 0.95rem;
+  resize: vertical;
+  outline: none;
+}
+
+.btn-save-aboutme {
+  margin-top: 8px;
+  padding: 6px 20px;
+  background-color: var(--dark-green);
+  color: #FCF9F2;
+  border: none;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.btn-save-aboutme:hover {
+  background-color: var(--card-green);
+}
+
+.status-open,
+.status-progress,
+.status-completed {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.status-open      { background-color: #c8e6c9; color: #1b5e20; border: 1px solid #a5d6a7; }
+.status-progress  { background-color: #fff9c4; color: #7a5500; border: 1px solid #fff176; }
+.status-completed { background-color: #ffcdd2; color: #b71c1c; border: 1px solid #ef9a9a; }
