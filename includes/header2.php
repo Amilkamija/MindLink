@@ -1,8 +1,7 @@
-<?php 
+<?php
 if (session_status() === PHP_SESSION_NONE){
 session_start();
 } ?>
-
 
 <!DOCTYPE html>
 <html lang="en">
@@ -22,7 +21,7 @@ session_start();
 
     <div class="d-flex gap-3 align-items-center">
         <a class="nav-link" href="/pages/contact.php">CONTACT</a>
-        <a class="nav-link" href="/pages/faq2.php">FAQ</a>
+        <a class="nav-link" href="/pages/faq.php">FAQ</a>
     </div>
 
     <a class="navbar-logo mx-auto d-flex align-items-center gap-0" href="/index.php">
@@ -33,21 +32,37 @@ session_start();
     <form class="d-flex" action="/pages/search.php" method="GET">
     <div class="search-bar d-flex align-items-center">
         <img src="/assets/img/search_icon.png" alt="Search" class="search-icon" height="16">
-        <input type="text" name="q" class="search-input" placeholder="SEARCH">
+       <input type="text" name="q" class="search-input" placeholder="Search..." required>
         <button type="submit" class="search-btn"></button>
         </div>
     </form>
-    <a href="/pages/logout.php" class="btn btn-logout px-4">LOG OUT</a>
+            <!-- Logout button that triggers the modal instead of logging out-->
+            <button class  = "btn btn-logout px-4" data-bs-toggle="modal" data-bs-target =   "#logoutModal">
+                LOG OUT
+            </button>
     </div>
 
 </div>
 </nav>
 
+<!-- Logout Modal -->
+<div class="modal fade" id="logoutModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-center p-3">
+            <p>Are you sure you want to log out?</p>
+            <div class="d-flex justify-content-center gap-2">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <a href="/pages/log_out.php" class="btn btn-dark">Log Out</a>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="d-flex">
 <div class="sidebar border-end">
     <ul class="sidebar-nav" style="list-style: none; padding: 0; margin: 0;">
     <li class="nav-item">
-        <a class="nav-link" href="/pages/dashboard.php">Home</a>
+        <a class="nav-link" href="/pages/home.php">Home</a>
     </li>
     <li class="nav-item">
         <a class="nav-link" href="/pages/projects.php">Projects</a>
@@ -66,4 +81,4 @@ session_start();
     </li>
     </ul>
 </div>
-<div class="main-content">
+<div class="main-content"></div>
