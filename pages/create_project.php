@@ -61,10 +61,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $full_description .= "\n\nModule / Subject: " . $module_subject;
         }
 
-        if ($skills_tags !== '') {
-            $full_description .= "\nTags: " . $skills_tags;
-        }
-
         if ($project_year !== '') {
             $full_description .= "\nPreferred Year: " . $project_year;
         }
@@ -129,6 +125,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             $role_stmt->close();
+
+            $tags_array = array_filter(array_map('trim', explode(',', $skills_tags)));
+
+            if (!empty($tags_array)) {
+                $tag_sql = "INSERT INTO ProjectTags (project_id, tag_name) VALUES (?, ?)";
+                $tag_stmt = $conn->prepare($tag_sql);
+
+                if (!$tag_stmt) {
+                    throw new Exception("Prepare failed: " . $conn->error);
+                }
+
+                foreach ($tags_array as $tag) {
+                    $tag_stmt->bind_param("is", $project_id, $tag);
+                    if (!$tag_stmt->execute()) {
+                        throw new Exception("Failed to save project tags.");
+                    }
+                }
+
+                $tag_stmt->close();
+            }
 
             $conn->commit();
 

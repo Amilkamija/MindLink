@@ -1,6 +1,12 @@
 <?php
+<<<<<<< backend
+if (session_status() === PHP_SESSION_NONE){
+session_start();
+} ?>
+=======
 require_once __DIR__ . '/../config/session.php';
 ?>
+>>>>>>> main
 
 <!DOCTYPE html>
 <html lang="en">
@@ -20,7 +26,7 @@ require_once __DIR__ . '/../config/session.php';
 
     <div class="d-flex gap-3 align-items-center">
         <a class="nav-link" href="/pages/contact.php">CONTACT</a>
-        <a class="nav-link" href="/pages/faq2.php">FAQ</a>
+        <a class="nav-link" href="/pages/faq.php">FAQ</a>
     </div>
 
     <a class="navbar-logo mx-auto d-flex align-items-center gap-0" href="/index.php">
@@ -31,11 +37,16 @@ require_once __DIR__ . '/../config/session.php';
     <form class="d-flex" action="/pages/search.php" method="GET">
     <div class="search-bar d-flex align-items-center">
         <img src="/assets/img/search_icon.png" alt="Search" class="search-icon" height="16">
-        <input type="text" name="q" class="search-input" placeholder="SEARCH">
+       <input type="text" name="q" class="search-input" placeholder="Search..." required>
         <button type="submit" class="search-btn"></button>
         </div>
     </form>
+<<<<<<< backend
+            <!-- Logout button that triggers the modal instead of logging out-->
+            <button class  = "btn btn-logout px-4" data-bs-toggle="modal" data-bs-target =   "#logoutModal">
+=======
             <button class  = "btn btn-logout px-4" data-bs-toggle="modal" data-bs-target ="#logoutModal">
+>>>>>>> main
                 LOG OUT
             </button>
     </div>
@@ -43,11 +54,19 @@ require_once __DIR__ . '/../config/session.php';
 </div>
 </nav>
 
+<<<<<<< backend
+<!-- Logout Modal -->
+=======
+>>>>>>> main
 <div class="modal fade" id="logoutModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content text-center p-3">
             <p>Are you sure you want to log out?</p>
+<<<<<<< backend
+            <div class="d-flex justify-content-center gap-2">
+=======
             <div class="d-flex justify-content-center gap-3">
+>>>>>>> main
                 <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <a href="/pages/log_out.php" class="btn btn-dark">Log Out</a>
             </div>
@@ -83,4 +102,8 @@ require_once __DIR__ . '/../config/session.php';
     <?php endif; ?>
     </ul>
 </div>
+<<<<<<< backend
+<div class="main-content"></div>
+=======
 <div class="main-content">
+>>>>>>> main
