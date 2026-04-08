@@ -1,12 +1,9 @@
 <?php
-<<<<<<< backend
 if (session_status() === PHP_SESSION_NONE){
 session_start();
 } ?>
-=======
-require_once __DIR__ . '/../config/session.php';
-?>
->>>>>>> main
+
+
 
 <!DOCTYPE html>
 <html lang="en">
