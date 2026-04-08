@@ -1,29 +1,29 @@
 :root {
-  --cream-bg: #f8f6ed;
-  --card-bg: #f0efe4;
-  --olive: #a7b18c;
-  --olive-light: #dbe0c6;
-  --olive-dark: #8a936d;
-  --text-main: #333;
-  --text-muted: #666;
+  --olive: #9ca47e;
+  --olive-dark: #626a42;
+  --olive-soft: #e8eadc;
   --white: #ffffff;
+  --bg-soft: #f8f6ed;
+  --border-soft: #dadcc9;
+  --text-dark: #1f1f1f;
+  --text-muted: #555;
 }
 
-/* Base */
 body {
-  background-color: var(--cream-bg);
+  background-color: var(--bg-soft);
   font-family: 'Inter', sans-serif;
-  color: var(--text-main);
+  color: var(--text-dark);
   margin: 0;
 }
 
+/* Container */
 .matches-container {
-  max-width: 1100px;
+  max-width: 1000px;
   margin: 40px auto 60px;
   padding: 0 20px;
 }
 
-/* Headings */
+/* Section Header */
 .section-header {
   text-align: center;
   margin-bottom: 30px;
@@ -31,181 +31,307 @@ body {
 
 .section-header h2 {
   font-size: 1.8rem;
-  color: var(--olive-dark);
+  color: var(--text-dark);
   font-weight: 700;
-  margin-bottom: 8px;
+  margin: 0 0 12px;
 }
 
 .section-header p {
   color: var(--text-muted);
-  max-width: 700px;
+  max-width: 650px;
   margin: 0 auto;
+  font-size: 1rem;
+  line-height: 1.6;
 }
 
+/* Divider */
 .divider {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-  margin: 25px 0 35px;
+  border: none;
+  border-bottom: 1px solid var(--border-soft);
+  margin: 30px 0;
 }
 
+/* Subheader */
 .subheader {
-  color: var(--olive-dark);
-  font-size: 1.1rem;
+  color: var(--text-dark);
+  font-size: 1.15rem;
   font-weight: 600;
-  margin-bottom: 18px;
+  margin-bottom: 20px;
 }
 
-/* Grid */
+/* Profiles Grid */
 .profiles-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 15px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
 }
 
-/* Card */
+/* Profile Card - Matching Settings page style */
 .profile-card {
-  background-color: var(--card-bg);
-  border-radius: 10px;
+  background: var(--white);
+  border: 1px solid var(--border-soft);
+  border-radius: 16px;
+  overflow: hidden;
   text-align: center;
-  padding: 16px 12px 34px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-  position: relative;
-  min-height: 210px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* Avatar section */
+.profile-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+/* Card Header - Olive header like Settings */
+.profile-card-header {
+  background: var(--olive);
+  color: var(--white);
+  padding: 14px 16px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+/* Card Body */
+.profile-card-body {
+  padding: 24px 20px;
+}
+
+/* Avatar Section */
 .avatar-wrapper {
   position: relative;
-  width: 60px;
-  height: 60px;
-  margin: 0 auto 10px;
+  width: 100px;
+  height: 100px;
+  margin: 0 auto 16px;
 }
 
 .avatar-circle {
-  width: 60px;
-  height: 60px;
-  background-color: var(--olive-light);
+  width: 100px;
+  height: 100px;
+  background-color: var(--olive-soft);
   border-radius: 50%;
   display: flex;
   justify-content: center;
   align-items: center;
+  overflow: hidden;
+  border: 3px solid var(--olive);
 }
 
 .avatar-circle svg {
-  width: 30px;
-  height: 30px;
+  width: 50px;
+  height: 50px;
   fill: var(--olive-dark);
 }
 
-/* Heart and age side by side on bottom-right of avatar */
+.avatar-circle img {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* Heart Icon */
 .heart-icon {
   position: absolute;
-  bottom: -2px;
-  right: -6px;
+  bottom: 4px;
+  right: 4px;
+  background: var(--white);
+  border-radius: 50%;
+  padding: 4px;
 }
 
 .heart-icon svg {
-  width: 20px;
-  height: 20px;
-  fill: #f5b5bd;
+  width: 22px;
+  height: 22px;
+  fill: #e8a0a8;
 }
 
+/* Year Badge */
 .age-number {
   position: absolute;
-  bottom: 4px;
-  right: -22px;
+  bottom: 0;
+  right: -10px;
   font-size: 0.85rem;
-  color: var(--olive-dark);
+  color: var(--white);
   font-weight: 600;
-}
-
-/* Text */
-.profile-name {
-  font-weight: 600;
-  margin-top: 10px;
-  margin-bottom: 2px;
-  font-size: 0.95rem;
-}
-
-.profile-course {
-  font-size: 0.85rem;
-  color: var(--olive-dark);
-  margin-bottom: 6px;
-}
-
-/* Combined skill box */
-.skill-box {
-  background-color: var(--olive-light);
-  border-radius: 20px;
-  display: inline-block;
-  padding: 6px 14px;
-  font-size: 0.8rem;
-  color: var(--text-main);
-  margin-bottom: 14px;
-}
-
-/* Buttons */
-.match-btn {
   background-color: var(--olive-dark);
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+/* Profile Name */
+.profile-name {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--text-dark);
+  margin: 0 0 6px;
+  word-break: break-word;
+}
+
+/* Course */
+.profile-course {
+  font-size: 0.9rem;
+  color: var(--olive-dark);
+  margin-bottom: 14px;
+  font-weight: 500;
+}
+
+/* Skill/Project Box */
+.skill-box {
+  background-color: var(--olive-soft);
+  border-radius: 25px;
+  display: inline-block;
+  padding: 8px 18px;
+  font-size: 0.85rem;
+  color: var(--text-dark);
+  margin-bottom: 18px;
+}
+
+/* Match Button */
+.match-btn {
+  background-color: var(--olive);
   color: var(--white);
   border: none;
-  border-radius: 18px;
-  padding: 7px 20px;
-  font-size: 0.8rem;
+  border-radius: 25px;
+  padding: 12px 36px;
+  font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.3s ease;
-  display: block;
-  margin: 8px auto 0;
+  transition: background-color 0.25s ease;
+  display: inline-block;
 }
 
 .match-btn:hover {
-  background-color: var(--olive);
-}
-
-.accept-btn {
-  background-color: var(--olive);
-}
-
-.accept-btn:hover {
   background-color: var(--olive-dark);
 }
 
-/* How it works */
+/* Accept Button */
+.accept-btn {
+  background-color: var(--olive-dark);
+}
+
+.accept-btn:hover {
+  background-color: #4a5233;
+}
+
+/* How It Works Box - Card style like Settings */
 .how-it-works {
-  background-color: var(--card-bg);
-  border-radius: 10px;
-  max-width: 600px;
+  background: var(--white);
+  border: 1px solid var(--border-soft);
+  border-radius: 16px;
+  overflow: hidden;
+  max-width: 700px;
   margin: 40px auto 0;
-  padding: 20px;
-  text-align: left;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
 }
 
 .how-it-works h3 {
-  color: var(--olive-dark);
-  font-size: 1.05rem;
-  margin-bottom: 10px;
+  background: var(--olive);
+  color: var(--white);
+  padding: 14px 20px;
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.how-it-works p {
+  padding: 20px;
+  color: var(--text-dark);
+  font-size: 0.95rem;
+  margin: 0;
+  line-height: 1.6;
 }
 
 .how-it-works ul {
-  list-style-type: disc;
-  margin-left: 20px;
-  color: var(--text-main);
-  font-size: 0.9rem;
+  list-style-type: none;
+  margin: 0;
+  padding: 20px;
+  color: var(--text-dark);
+  font-size: 0.95rem;
 }
 
 .how-it-works li {
-  margin-bottom: 5px;
+  margin-bottom: 12px;
+  line-height: 1.5;
+  padding-left: 20px;
+  position: relative;
+}
+
+.how-it-works li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: var(--olive-dark);
+  font-weight: bold;
+}
+
+.how-it-works li:last-child {
+  margin-bottom: 0;
+}
+
+/* Empty State Cards - Card style */
+.empty-state-card {
+  background: var(--white);
+  border: 1px solid var(--border-soft);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+}
+
+.empty-state-card h3 {
+  background: var(--olive);
+  color: var(--white);
+  padding: 14px 20px;
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.empty-state-card p {
+  padding: 20px;
+  color: var(--text-dark);
+  font-size: 0.95rem;
+  margin: 0;
 }
 
 /* Responsive */
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .profiles-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
   }
 }
 
-@media (max-width: 500px) {
+@media (max-width: 600px) {
+  .matches-container {
+    padding: 0 16px;
+    margin: 30px auto 40px;
+  }
+
   .profiles-grid {
     grid-template-columns: 1fr;
+  }
+
+  .section-header h2 {
+    font-size: 1.5rem;
+  }
+
+  .avatar-wrapper {
+    width: 80px;
+    height: 80px;
+  }
+
+  .avatar-circle {
+    width: 80px;
+    height: 80px;
+  }
+
+  .avatar-circle svg {
+    width: 40px;
+    height: 40px;
+  }
+
+  .match-btn {
+    width: 100%;
+    padding: 12px 20px;
   }
 }
