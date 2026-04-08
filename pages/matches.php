@@ -9,7 +9,8 @@ if (!isset($_SESSION['user_id'])) {
     header("Location: /pages/login.php");
     exit();
 }
-
+/** donot need this**/
+ 
 $current_user_id = (int) $_SESSION['user_id'];
 
 function safeText($value) {
