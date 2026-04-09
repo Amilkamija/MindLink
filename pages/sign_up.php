@@ -31,8 +31,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if ($stmt->execute()) {
                 $_SESSION['user_id'] = $conn->insert_id;
-                $_SESSION['role']    = 'user';
-                header("Location: /pages/home.php");
+                $_SESSION['role']    = 'student';
+                setcookie('first_login', '1', time() + 600, '/');
+                header("Location: /pages/profile.php");
                 exit();
             } else {
                 $error = "Registration failed. Please try again.";
