@@ -34,3 +34,4 @@ require_once __DIR__ . '/../config/session.php';
 
   </div>
 </nav>
+<?php require_once __DIR__ . '/cookie_consent.php'; ?>
