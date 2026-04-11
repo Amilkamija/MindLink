@@ -9,9 +9,10 @@ if (!isset($_SESSION['user_id'])) {
     header("Location: /pages/login.php");
     exit();
 }
-/** donot need this**/
- 
+
 $current_user_id = (int) $_SESSION['user_id'];
+
+define('PROFILE_PICTURE_BASE', '/uploads/');
 
 function safeText($value) {
     return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
@@ -22,6 +23,35 @@ function yearBadge($year) {
         return 'Y' . (int)$year;
     }
     return '';
+}
+
+function displayUserLabel($email) {
+    $email = trim((string)$email);
+    if ($email === '') {
+        return 'User';
+    }
+    if (strpos($email, '@') !== false) {
+        return explode('@', $email)[0];
+    }
+    return $email;
+}
+
+function buildProfilePictureUrl($filename) {
+    $filename = trim((string)$filename);
+
+    if ($filename === '') {
+        return '';
+    }
+
+    if (
+        strpos($filename, 'http://') === 0 ||
+        strpos($filename, 'https://') === 0 ||
+        strpos($filename, '/') === 0
+    ) {
+        return $filename;
+    }
+
+    return rtrim(PROFILE_PICTURE_BASE, '/') . '/' . ltrim($filename, '/');
 }
 
 function alreadyMatched($conn, $projectId, $userA, $userB) {
@@ -98,7 +128,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($projectId > 0 && $targetUserId > 0 && $targetUserId !== $current_user_id) {
             if (!alreadyMatched($conn, $projectId, $current_user_id, $targetUserId)) {
-                // If reverse pending request exists, accept it and create match
                 if (requestExists($conn, $projectId, $targetUserId, $current_user_id, 'pending')) {
                     $updateSql = "
                         UPDATE ConnectionRequests
@@ -131,7 +160,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         }
                     }
                 } else {
-                    // Insert new pending request if none exists
                     if (!requestExists($conn, $projectId, $current_user_id, $targetUserId)) {
                         $insertRequestSql = "
                             INSERT INTO ConnectionRequests (project_id, from_user_id, to_user_id, status)
@@ -243,12 +271,10 @@ while ($row = $resultProfiles->fetch_assoc()) {
     $candidateId = (int)$row['user_id'];
     $projectId = (int)$row['project_id'];
 
-    // Skip if already matched
     if (alreadyMatched($conn, $projectId, $current_user_id, $candidateId)) {
         continue;
     }
 
-    // Skip if pending request already exists in either direction
     if (
         requestExists($conn, $projectId, $current_user_id, $candidateId, 'pending') ||
         requestExists($conn, $projectId, $candidateId, $current_user_id, 'pending')
@@ -323,42 +349,58 @@ $stmtRequests->close();
     <?php if (!empty($profiles)): ?>
       <?php foreach ($profiles as $profile): ?>
         <div class="profile-card">
-          <div class="avatar-wrapper">
-            <div class="avatar-circle">
-              <?php if (!empty($profile['profile_picture'])): ?>
-                <img src="/uploads/<?php echo safeText($profile['profile_picture']); ?>" alt="Profile" style="width:60px;height:60px;border-radius:50%;object-fit:cover;">
-              <?php else: ?>
+          <div class="profile-card-header">Completed teammate</div>
+
+          <div class="profile-card-body">
+            <div class="avatar-wrapper">
+              <div class="avatar-circle">
+                <?php if (!empty($profile['profile_picture'])): ?>
+                  <img 
+                    src="<?php echo safeText(buildProfilePictureUrl($profile['profile_picture'])); ?>" 
+                    alt="" 
+                    class="profile-avatar-img"
+                    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                  >
+                  <div class="avatar-fallback" style="display:none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                      <path d="M12,12A4,4 0 1,0 8,8A4,4 0 0,0 12,12ZM12,14C9.33,14 4,15.34 4,18V20H20V18C20,15.34 14.67,14 12,14Z"/>
+                    </svg>
+                  </div>
+                <?php else: ?>
+                  <div class="avatar-fallback">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                      <path d="M12,12A4,4 0 1,0 8,8A4,4 0 0,0 12,12ZM12,14C9.33,14 4,15.34 4,18V20H20V18C20,15.34 14.67,14 12,14Z"/>
+                    </svg>
+                  </div>
+                <?php endif; ?>
+              </div>
+
+              <div class="heart-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                  <path d="M12,12A4,4 0 1,0 8,8A4,4 0 0,0 12,12ZM12,14C9.33,14 4,15.34 4,18V20H20V18C20,15.34 14.67,14 12,14Z"/>
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5c0-2.5 1.99-4.5 4.5-4.5c1.74 0 3.41 1.01 4.22 2.61C11.09 5.01 12.76 4 14.5 4C17.01 4 19 6 19 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
                 </svg>
+              </div>
+
+              <?php if (!empty($profile['year'])): ?>
+                <span class="age-number"><?php echo safeText(yearBadge($profile['year'])); ?></span>
               <?php endif; ?>
             </div>
 
-            <div class="heart-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5c0-2.5 1.99-4.5 4.5-4.5c1.74 0 3.41 1.01 4.22 2.61C11.09 5.01 12.76 4 14.5 4C17.01 4 19 6 19 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-              </svg>
-            </div>
+            <div class="profile-name"><?php echo safeText(displayUserLabel($profile['email'])); ?></div>
+            <div class="profile-course"><?php echo safeText($profile['course'] ?: 'Course not listed'); ?></div>
+            <div class="skill-box"><?php echo safeText($profile['project_title']); ?></div>
 
-            <?php if (!empty($profile['year'])): ?>
-              <span class="age-number"><?php echo safeText(yearBadge($profile['year'])); ?></span>
-            <?php endif; ?>
+            <form method="POST" action="">
+              <input type="hidden" name="action" value="send_match">
+              <input type="hidden" name="project_id" value="<?php echo (int)$profile['project_id']; ?>">
+              <input type="hidden" name="target_user_id" value="<?php echo (int)$profile['user_id']; ?>">
+              <button type="submit" class="match-btn">MATCH!</button>
+            </form>
           </div>
-
-          <div class="profile-name"><?php echo safeText($profile['email']); ?></div>
-          <div class="profile-course"><?php echo safeText($profile['course'] ?: 'Course not listed'); ?></div>
-          <div class="skill-box"><?php echo safeText($profile['project_title']); ?></div>
-
-          <form method="POST" action="">
-            <input type="hidden" name="action" value="send_match">
-            <input type="hidden" name="project_id" value="<?php echo (int)$profile['project_id']; ?>">
-            <input type="hidden" name="target_user_id" value="<?php echo (int)$profile['user_id']; ?>">
-            <button type="submit" class="match-btn">MATCH!</button>
-          </form>
         </div>
       <?php endforeach; ?>
     <?php else: ?>
-      <div class="how-it-works" style="max-width:100%;">
+      <div class="empty-state-card" style="max-width:100%;">
         <h3>No profiles available yet</h3>
         <p>You will see potential matches here after you complete a project with other teammates.</p>
       </div>
@@ -373,43 +415,59 @@ $stmtRequests->close();
     <?php if (!empty($incomingRequests)): ?>
       <?php foreach ($incomingRequests as $request): ?>
         <div class="profile-card">
-          <div class="avatar-wrapper">
-            <div class="avatar-circle">
-              <?php if (!empty($request['profile_picture'])): ?>
-                <img src="/uploads/<?php echo safeText($request['profile_picture']); ?>" alt="Profile" style="width:60px;height:60px;border-radius:50%;object-fit:cover;">
-              <?php else: ?>
+          <div class="profile-card-header">Incoming request</div>
+
+          <div class="profile-card-body">
+            <div class="avatar-wrapper">
+              <div class="avatar-circle">
+                <?php if (!empty($request['profile_picture'])): ?>
+                  <img 
+                    src="<?php echo safeText(buildProfilePictureUrl($request['profile_picture'])); ?>" 
+                    alt="" 
+                    class="profile-avatar-img"
+                    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                  >
+                  <div class="avatar-fallback" style="display:none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                      <path d="M12,12A4,4 0 1,0 8,8A4,4 0 0,0 12,12ZM12,14C9.33,14 4,15.34 4,18V20H20V18C20,15.34 14.67,14 12,14Z"/>
+                    </svg>
+                  </div>
+                <?php else: ?>
+                  <div class="avatar-fallback">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                      <path d="M12,12A4,4 0 1,0 8,8A4,4 0 0,0 12,12ZM12,14C9.33,14 4,15.34 4,18V20H20V18C20,15.34 14.67,14 12,14Z"/>
+                    </svg>
+                  </div>
+                <?php endif; ?>
+              </div>
+
+              <div class="heart-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                  <path d="M12,12A4,4 0 1,0 8,8A4,4 0 0,0 12,12ZM12,14C9.33,14 4,15.34 4,18V20H20V18C20,15.34 14.67,14 12,14Z"/>
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5c0-2.5 1.99-4.5 4.5-4.5c1.74 0 3.41 1.01 4.22 2.61C11.09 5.01 12.76 4 14.5 4C17.01 4 19 6 19 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
                 </svg>
+              </div>
+
+              <?php if (!empty($request['year'])): ?>
+                <span class="age-number"><?php echo safeText(yearBadge($request['year'])); ?></span>
               <?php endif; ?>
             </div>
 
-            <div class="heart-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5c0-2.5 1.99-4.5 4.5-4.5c1.74 0 3.41 1.01 4.22 2.61C11.09 5.01 12.76 4 14.5 4C17.01 4 19 6 19 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-              </svg>
-            </div>
+            <div class="profile-name"><?php echo safeText(displayUserLabel($request['email'])); ?></div>
+            <div class="profile-course"><?php echo safeText($request['course'] ?: 'Course not listed'); ?></div>
+            <div class="skill-box"><?php echo safeText($request['project_title']); ?></div>
 
-            <?php if (!empty($request['year'])): ?>
-              <span class="age-number"><?php echo safeText(yearBadge($request['year'])); ?></span>
-            <?php endif; ?>
+            <form method="POST" action="">
+              <input type="hidden" name="action" value="accept_match">
+              <input type="hidden" name="request_id" value="<?php echo (int)$request['request_id']; ?>">
+              <input type="hidden" name="project_id" value="<?php echo (int)$request['project_id']; ?>">
+              <input type="hidden" name="from_user_id" value="<?php echo (int)$request['from_user_id']; ?>">
+              <button type="submit" class="match-btn accept-btn">ACCEPT</button>
+            </form>
           </div>
-
-          <div class="profile-name"><?php echo safeText($request['email']); ?></div>
-          <div class="profile-course"><?php echo safeText($request['course'] ?: 'Course not listed'); ?></div>
-          <div class="skill-box"><?php echo safeText($request['project_title']); ?></div>
-
-          <form method="POST" action="">
-            <input type="hidden" name="action" value="accept_match">
-            <input type="hidden" name="request_id" value="<?php echo (int)$request['request_id']; ?>">
-            <input type="hidden" name="project_id" value="<?php echo (int)$request['project_id']; ?>">
-            <input type="hidden" name="from_user_id" value="<?php echo (int)$request['from_user_id']; ?>">
-            <button type="submit" class="match-btn accept-btn">ACCEPT</button>
-          </form>
         </div>
       <?php endforeach; ?>
     <?php else: ?>
-      <div class="how-it-works" style="max-width:100%;">
+      <div class="empty-state-card" style="max-width:100%;">
         <h3>No match requests yet</h3>
         <p>Incoming connection requests will appear here.</p>
       </div>

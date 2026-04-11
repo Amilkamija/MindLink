@@ -22,14 +22,10 @@ $projectId = (int) $_GET['project_id'];
 
 function formatStatus($status) {
     switch ($status) {
-        case 'open':
-            return 'Open';
-        case 'in_progress':
-            return 'In Progress';
-        case 'completed':
-            return 'Completed';
-        default:
-            return ucfirst(str_replace('_', ' ', (string)$status));
+        case 'open': return 'Open';
+        case 'in_progress': return 'In Progress';
+        case 'completed': return 'Completed';
+        default: return ucfirst(str_replace('_', ' ', (string)$status));
     }
 }
 
@@ -41,7 +37,6 @@ function safeText($value) {
 |--------------------------------------------------------------------------
 | 1. Fetch project details
 |--------------------------------------------------------------------------
-| Uses only columns we already know from your database/screenshots.
 */
 $sqlProject = "
     SELECT 
@@ -63,16 +58,13 @@ $sqlProject = "
 ";
 
 $stmtProject = $conn->prepare($sqlProject);
-
-if (!$stmtProject) {
-    die('Project query prepare failed: ' . $conn->error);
-}
+if (!$stmtProject) die('Project query failed: ' . $conn->error);
 
 $stmtProject->bind_param("i", $projectId);
 $stmtProject->execute();
 $resultProject = $stmtProject->get_result();
 
-if (!$resultProject || $resultProject->num_rows === 0) {
+if ($resultProject->num_rows === 0) {
     die("Project not found.");
 }
 
@@ -81,9 +73,8 @@ $stmtProject->close();
 
 /*
 |--------------------------------------------------------------------------
-| 2. Fetch project roles
+| 2. Roles
 |--------------------------------------------------------------------------
-| Removed slots_needed because it may not exist in your Roles table.
 */
 $roles = [];
 
@@ -95,11 +86,6 @@ $sqlRoles = "
 ";
 
 $stmtRoles = $conn->prepare($sqlRoles);
-
-if (!$stmtRoles) {
-    die('Roles query prepare failed: ' . $conn->error);
-}
-
 $stmtRoles->bind_param("i", $projectId);
 $stmtRoles->execute();
 $resultRoles = $stmtRoles->get_result();
@@ -107,14 +93,12 @@ $resultRoles = $stmtRoles->get_result();
 while ($row = $resultRoles->fetch_assoc()) {
     $roles[] = $row;
 }
-
 $stmtRoles->close();
 
 /*
 |--------------------------------------------------------------------------
-| 3. Fetch team members
+| 3. Members
 |--------------------------------------------------------------------------
-| Uses email instead of name because name may not exist in Users table.
 */
 $members = [];
 
@@ -134,11 +118,6 @@ $sqlMembers = "
 ";
 
 $stmtMembers = $conn->prepare($sqlMembers);
-
-if (!$stmtMembers) {
-    die('Members query prepare failed: ' . $conn->error);
-}
-
 $stmtMembers->bind_param("i", $projectId);
 $stmtMembers->execute();
 $resultMembers = $stmtMembers->get_result();
@@ -146,14 +125,12 @@ $resultMembers = $stmtMembers->get_result();
 while ($row = $resultMembers->fetch_assoc()) {
     $members[] = $row;
 }
-
 $stmtMembers->close();
 
 /*
 |--------------------------------------------------------------------------
-| 4. Fetch project skills/tags
+| 4. Tags
 |--------------------------------------------------------------------------
-| Your DB has ProjectTags, not ProjectSkills.
 */
 $tags = [];
 
@@ -165,11 +142,6 @@ $sqlTags = "
 ";
 
 $stmtTags = $conn->prepare($sqlTags);
-
-if (!$stmtTags) {
-    die('Tags query prepare failed: ' . $conn->error);
-}
-
 $stmtTags->bind_param("i", $projectId);
 $stmtTags->execute();
 $resultTags = $stmtTags->get_result();
@@ -177,7 +149,6 @@ $resultTags = $stmtTags->get_result();
 while ($row = $resultTags->fetch_assoc()) {
     $tags[] = $row['tag_name'];
 }
-
 $stmtTags->close();
 
 $currentMemberCount = count($members);
@@ -185,6 +156,7 @@ $currentMemberCount = count($members);
 
 <div class="content-area">
 
+    <!-- HEADER -->
     <div class="detail-card header-card">
         <div class="detail-header">
             <div class="header-info">
@@ -196,17 +168,19 @@ $currentMemberCount = count($members);
 
             <div class="project-actions">
                 <a href="#members" class="detail-btn secondary-btn">View Members</a>
-                <a href="/pages/apply.php?project_id=<?php echo (int)$project['project_id']; ?>" class="detail-btn primary-btn">Apply</a>
-                <a href="#" class="detail-btn report-btn">Report</a>
+                <a href="/pages/apply.php?project_id=<?php echo $projectId; ?>" class="detail-btn primary-btn">Apply</a>
+                <a href="/pages/report.php?project_id=<?php echo $projectId; ?>" class="detail-btn report-btn">Report</a>
             </div>
         </div>
     </div>
 
+    <!-- INFO + SKILLS -->
     <div class="detail-grid two-col">
 
         <div class="detail-card">
             <div class="detail-card-title">Project Information</div>
             <div class="info-list">
+
                 <div class="info-item">
                     <span class="info-label">Owner Email</span>
                     <span class="info-value"><?php echo safeText($project['email']); ?></span>
@@ -239,8 +213,9 @@ $currentMemberCount = count($members);
 
                 <div class="info-item">
                     <span class="info-label">Current Members</span>
-                    <span class="info-value"><?php echo (int)$currentMemberCount; ?></span>
+                    <span class="info-value"><?php echo $currentMemberCount; ?></span>
                 </div>
+
             </div>
         </div>
 
@@ -252,32 +227,30 @@ $currentMemberCount = count($members);
                         <span class="skill-tag"><?php echo safeText($tag); ?></span>
                     <?php endforeach; ?>
                 <?php else: ?>
-                    <p>No skills listed for this project yet.</p>
+                    <p class="empty-text">No skills listed for this project yet.</p>
                 <?php endif; ?>
             </div>
         </div>
+
     </div>
 
+    <!-- MEMBERS + ROLES -->
     <div class="detail-grid two-col">
 
         <div class="detail-card" id="members">
             <div class="detail-card-title">Team Members</div>
             <ul class="member-list">
                 <?php if (!empty($members)): ?>
-                    <?php foreach ($members as $member): ?>
-                        <li class="member-item">
-                            <span class="member-name">
-                                <?php echo safeText($member['email']); ?>
-                            </span>
-                            <span class="member-role">
-                                <?php echo safeText($member['role_title'] ?: 'Team Member'); ?>
-                            </span>
-                        </li>
-                    <?php endforeach; ?>
+                   <?php foreach ($members as $member): ?>
+       <li class="member-item">
+        <a href="/pages/profile.php?user_id=<?php echo (int)$member['user_id']; ?>" class="member-link">
+            <span class="member-name"><?php echo safeText($member['email']); ?></span>
+            <span class="member-role"><?php echo safeText($member['role_title'] ?: 'Team Member'); ?></span>
+        </a>
+    </li>
+<?php endforeach; ?>
                 <?php else: ?>
-                    <li class="member-item">
-                        <span class="member-name">No members joined yet.</span>
-                    </li>
+                    <li class="member-item empty-text">No members joined yet.</li>
                 <?php endif; ?>
             </ul>
         </div>
@@ -295,12 +268,14 @@ $currentMemberCount = count($members);
                         </li>
                     <?php endforeach; ?>
                 <?php else: ?>
-                    <li class="role-item">No roles available for this project.</li>
+                    <li class="role-item empty-text">No roles available for this project.</li>
                 <?php endif; ?>
             </ul>
         </div>
+
     </div>
 
+    <!-- DESCRIPTION -->
     <div class="detail-card">
         <div class="detail-card-title">Project Description</div>
         <div class="description-box">
