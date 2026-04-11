@@ -106,6 +106,67 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $is_own_profile && isset($_POST['re
     exit();
 }
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $is_own_profile && isset($_POST['add_skill'])) {
+    $skill_name = trim($_POST['add_skill']);
+    $new_skill  = null;
+    if ($skill_name !== '') {
+        
+        $stmt = $conn->prepare("SELECT skill_id FROM Skills WHERE skill_name = ?");
+        $stmt->bind_param("s", $skill_name);
+        $stmt->execute();
+        $stmt->store_result();
+        if ($stmt->num_rows > 0) {
+            $stmt->bind_result($skill_id);
+            $stmt->fetch();
+            $stmt->close();
+        } else {
+            $stmt->close();
+            $stmt = $conn->prepare("INSERT INTO Skills (skill_name) VALUES (?)");
+            $stmt->bind_param("s", $skill_name);
+            $stmt->execute();
+            $skill_id = $conn->insert_id;
+            $stmt->close();
+        }
+        
+        $stmt = $conn->prepare("SELECT 1 FROM UserSkills WHERE user_id = ? AND skill_id = ?");
+        $stmt->bind_param("ii", $_SESSION['user_id'], $skill_id);
+        $stmt->execute();
+        $stmt->store_result();
+        if ($stmt->num_rows === 0) {
+            $stmt->close();
+            $stmt = $conn->prepare("INSERT INTO UserSkills (user_id, skill_id) VALUES (?, ?)");
+            $stmt->bind_param("ii", $_SESSION['user_id'], $skill_id);
+            $stmt->execute();
+            $stmt->close();
+            $new_skill = ['skill_id' => $skill_id, 'skill_name' => $skill_name];
+        } else {
+            $stmt->close();
+        }
+    }
+    if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'skill' => $new_skill]);
+        exit();
+    }
+    header("Location: /pages/profile.php");
+    exit();
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $is_own_profile && isset($_POST['remove_skill'])) {
+    $skill_id = (int)$_POST['remove_skill'];
+    $stmt = $conn->prepare("DELETE FROM UserSkills WHERE skill_id = ? AND user_id = ?");
+    $stmt->bind_param("ii", $skill_id, $_SESSION['user_id']);
+    $stmt->execute();
+    $stmt->close();
+    if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true]);
+        exit();
+    }
+    header("Location: /pages/profile.php");
+    exit();
+}
+
 $stmt = $conn->prepare("SELECT user_id, email, course, year, bio, profile_picture FROM Users WHERE user_id = ?");
 $stmt->bind_param("i", $profile_id);
 $stmt->execute();
@@ -126,13 +187,13 @@ $avgScore = $ratingData['avg_score'] ?? 0;
 $totalRatings = $ratingData['total'] ?? 0;
 
 
-$stmt = $conn->prepare("SELECT s.skill_name FROM UserSkills us JOIN Skills s ON us.skill_id = s.skill_id WHERE us.user_id = ?");
+$stmt = $conn->prepare("SELECT us.skill_id, s.skill_name FROM UserSkills us JOIN Skills s ON us.skill_id = s.skill_id WHERE us.user_id = ?");
 $stmt->bind_param("i", $profile_id);
 $stmt->execute();
 $skillsResult = $stmt->get_result();
 $skills = [];
 while ($row = $skillsResult->fetch_assoc()) {
-    $skills[] = $row['skill_name'];
+    $skills[] = $row;
 }
 $stmt->close();
 
@@ -161,7 +222,7 @@ $stmt->close();
 
 function formatStatus($status) {
     $labels = [
-        'open'        => 'Open for applications',
+        'open' => 'Open for applications',
         'in_progress' => 'In Progress',
         'completed'   => 'Completed',
     ];
@@ -325,11 +386,89 @@ function formatStatus($status) {
         }
       </script>
 
-      <?php if (!empty($skills)): ?>
       <div class="section-pill">Skills</div>
-      <div class="about-text">
-        <?= implode(', ', array_map('htmlspecialchars', $skills)) ?>
+      <?php if ($is_own_profile): ?>
+        <form method="POST" action="/pages/profile.php" class="skill-add-form">
+          <input type="text" name="add_skill" class="tag-input" placeholder="Add a skill..." maxlength="100" required>
+          <button type="submit" class="btn-save-aboutme">Add</button>
+        </form>
+      <?php endif; ?>
+
+      <div class="tags-container" id="skills-container">
+        <?php if (!empty($skills)): ?>
+          <?php foreach ($skills as $skill): ?>
+            <span class="tag-chip" data-skill-id="<?= $skill['skill_id'] ?>">
+              <?= htmlspecialchars($skill['skill_name']) ?>
+              <?php if ($is_own_profile): ?>
+                <button type="button" class="tag-remove" title="Remove">&#215;</button>
+              <?php endif; ?>
+            </span>
+          <?php endforeach; ?>
+        <?php else: ?>
+          <p id="no-skills-msg" style="color:var(--text-soft); font-size:0.95rem;">No skills yet.</p>
+        <?php endif; ?>
       </div>
+
+      <?php if ($is_own_profile): ?>
+      <script>
+      (function () {
+        const container = document.getElementById('skills-container');
+        const addForm   = document.querySelector('.skill-add-form');
+
+        function makeChip(skill) {
+          const span = document.createElement('span');
+          span.className = 'tag-chip';
+          span.dataset.skillId = skill.skill_id;
+          span.textContent = skill.skill_name + ' ';
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'tag-remove';
+          btn.title = 'Remove';
+          btn.innerHTML = '&#215;';
+          btn.addEventListener('click', () => removeSkill(skill.skill_id, span));
+          span.appendChild(btn);
+          return span;
+        }
+
+        function removeSkill(skillId, chipEl) {
+          const fd = new FormData();
+          fd.append('remove_skill', skillId);
+          fetch('/pages/profile.php', {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: fd
+          }).then(r => r.json()).then(data => {
+            if (data.success) chipEl.remove();
+          });
+        }
+
+        container.querySelectorAll('.tag-chip').forEach(chip => {
+          const btn = chip.querySelector('.tag-remove');
+          if (btn) btn.addEventListener('click', () => removeSkill(chip.dataset.skillId, chip));
+        });
+
+        addForm.addEventListener('submit', e => {
+          e.preventDefault();
+          const input = addForm.querySelector('.tag-input');
+          const skill = input.value.trim();
+          if (!skill) return;
+          const fd = new FormData();
+          fd.append('add_skill', skill);
+          fetch('/pages/profile.php', {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: fd
+          }).then(r => r.json()).then(data => {
+            if (data.success && data.skill) {
+              const msg = document.getElementById('no-skills-msg');
+              if (msg) msg.remove();
+              container.appendChild(makeChip(data.skill));
+              input.value = '';
+            }
+          });
+        });
+      })();
+      </script>
       <?php endif; ?>
 
       <div class="section-line profile-line"></div>
@@ -390,13 +529,11 @@ function formatStatus($status) {
           });
         }
 
-        // Wire up existing remove buttons
         container.querySelectorAll('.tag-chip').forEach(chip => {
           const btn = chip.querySelector('.tag-remove');
           if (btn) btn.addEventListener('click', () => removeTag(chip.dataset.tagId, chip));
         });
 
-        // Add tag via AJAX
         addForm.addEventListener('submit', e => {
           e.preventDefault();
           const input = addForm.querySelector('.tag-input');
@@ -436,9 +573,9 @@ function formatStatus($status) {
                 <p><?= htmlspecialchars($project['description'] ?? '') ?></p>
                 <?php
                 $statusClasses = [
-                    'open'        => 'status-open',
+                    'open' => 'status-open',
                     'in_progress' => 'status-progress',
-                    'completed'   => 'status-completed',
+                    'completed' => 'status-completed',
                 ];
                 $statusClass = $statusClasses[$project['status']] ?? '';
                 ?>
