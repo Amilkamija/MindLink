@@ -75,6 +75,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->bind_param("i", $project_id);
         $stmt->execute();
         $stmt->close();
+        $stmt = $conn->prepare("DELETE FROM TeamMembership WHERE project_id = ?");
+        $stmt->bind_param("i", $project_id);
+        $stmt->execute();
+        $stmt->close();
         $stmt = $conn->prepare("DELETE FROM Projects WHERE project_id = ?");
         $stmt->bind_param("i", $project_id);
         $stmt->execute();
@@ -117,12 +121,21 @@ foreach ($userReportsRaw as $row) {
 $reports = $conn->query("
     SELECT r.report_id, r.reason, r.created_at,
     r.reported_user_id,
-    rep.email  AS reporter_email,
-    rep2.email AS reported_email
+    COALESCE(rep.email,  '[deleted user]') AS reporter_email,
+    COALESCE(rep2.email, '[deleted user]') AS reported_email
     FROM Reports r
-    JOIN Users rep  ON r.reporter_id      = rep.user_id
-    JOIN Users rep2 ON r.reported_user_id = rep2.user_id
-    WHERE r.status = 'open' AND r.project_id IS NULL
+    LEFT JOIN Users rep  ON r.reporter_id = rep.user_id
+    LEFT JOIN Users rep2 ON r.reported_user_id = rep2.user_id
+    WHERE r.status = 'open' AND r.project_id IS NULL AND r.reported_user_id IS NOT NULL
+    ORDER BY r.created_at DESC
+")->fetch_all(MYSQLI_ASSOC);
+
+$generalReports = $conn->query("
+    SELECT r.report_id, r.reason, r.created_at,
+    rep.email AS reporter_email
+    FROM Reports r
+    JOIN Users rep ON r.reporter_id = rep.user_id
+    WHERE r.status = 'open' AND r.project_id IS NULL AND r.reported_user_id IS NULL
     ORDER BY r.created_at DESC
 ")->fetch_all(MYSQLI_ASSOC);
 
@@ -224,7 +237,7 @@ require_once __DIR__ . '/../includes/header2.php';
 
           <?php foreach ($users as $idx => $user): ?>
           <div class="admin-table-row" data-search="<?= htmlspecialchars(strtolower($user['email'] . ' ' . $user['course'] . ' ' . $user['year'])) ?>">
-            <div style="font-size:0.85rem;"><?= htmlspecialchars($user['email']) ?></div>
+            <div><?= htmlspecialchars($user['email']) ?></div>
             <div><?= htmlspecialchars($user['course'] ?? '—') ?></div>
             <div><?= htmlspecialchars($user['year'] ?? '—') ?></div>
             <div>
@@ -355,7 +368,7 @@ require_once __DIR__ . '/../includes/header2.php';
       
       <div class="admin-right">
 
-        <?php if (empty($reports) && empty($projectReports)): ?>
+        <?php if (empty($reports) && empty($projectReports) && empty($generalReports)): ?>
         <div class="report-card">
           <div class="report-card-header">Reports &amp; Safety</div>
           <div class="report-card-body">
@@ -471,6 +484,57 @@ require_once __DIR__ . '/../includes/header2.php';
                   <input type="hidden" name="report_id" value="<?= $pr['report_id'] ?>">
                   <input type="hidden" name="project_id" value="<?= $pr['project_id'] ?>">
                   <button type="submit" name="resolve_project_remove" class="btn btn-danger">Remove Project</button>
+                </form>
+              </div>
+              <div class="d-flex justify-content-center mt-3">
+                <button class="btn btn-link" data-bs-dismiss="modal">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <?php endforeach; ?>
+
+        <?php foreach ($generalReports as $k => $gr): ?>
+        <div class="report-card">
+          <div class="report-card-header">Reports &amp; Safety</div>
+          <div class="report-card-body">
+            <div class="report-title">General Report</div>
+            <div class="report-divider"></div>
+            <div class="report-name"><?= htmlspecialchars($gr['reporter_email']) ?></div>
+            <div class="report-reason">Reason: <?= htmlspecialchars($gr['reason']) ?></div>
+            <div class="report-divider bottom-divider"></div>
+            <div class="report-actions">
+              <button class="report-btn" data-bs-toggle="modal" data-bs-target="#reviewGeneralModal<?= $k ?>">Review</button>
+              <button class="report-btn" data-bs-toggle="modal" data-bs-target="#resolveGeneralModal<?= $k ?>">Resolve</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal fade" id="reviewGeneralModal<?= $k ?>" tabindex="-1">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content p-3">
+              <h5 class="modal-title mb-2">General Report Details</h5>
+              <hr>
+              <p><strong>Reported by:</strong> <?= htmlspecialchars($gr['reporter_email']) ?></p>
+              <p><strong>Reason:</strong> <?= htmlspecialchars($gr['reason']) ?></p>
+              <p><strong>Date:</strong> <?= htmlspecialchars($gr['created_at']) ?></p>
+              <div class="d-flex justify-content-end mt-3">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal fade" id="resolveGeneralModal<?= $k ?>" tabindex="-1">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content p-3 text-center">
+              <h5 class="modal-title mb-2">Resolve General Report</h5>
+              <p style="font-size:0.9rem;">From: <strong><?= htmlspecialchars($gr['reporter_email']) ?></strong></p>
+              <hr>
+              <div class="d-flex justify-content-center mt-2">
+                <form method="POST" action="/pages/admin.php">
+                  <input type="hidden" name="report_id" value="<?= $gr['report_id'] ?>">
+                  <button type="submit" name="resolve_keep" class="btn btn-secondary">Mark Resolved</button>
                 </form>
               </div>
               <div class="d-flex justify-content-center mt-3">

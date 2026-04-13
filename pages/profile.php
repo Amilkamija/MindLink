@@ -319,6 +319,8 @@ function formatStatus($status) {
         <div class="profile-right-col">
           <?php if ($is_own_profile): ?>
             <button class="btn-edit-aboutme" onclick="toggleDetails()">Edit</button>
+          <?php else: ?>
+            <a href="/pages/report.php?user_id=<?= $profile_id ?>" class="btn-edit-aboutme" style="text-decoration:none;">Report User</a>
           <?php endif; ?>
           <div class="profile-rating">
             <span class="rating-label">Rating:</span>
