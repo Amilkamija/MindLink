@@ -24,13 +24,6 @@ $startChatUserId = isset($_GET['user_id']) && is_numeric($_GET['user_id'])
     ? (int) $_GET['user_id']
     : 0;
 
-/*
-|--------------------------------------------------------------------------
-| CONFIG
-|--------------------------------------------------------------------------
-| Change this path to match your real upload folder.
-|--------------------------------------------------------------------------
-*/
 define('PROFILE_PICTURE_BASE', '/uploads/profile_pictures/');
 
 function safeText($value) {
@@ -47,6 +40,7 @@ function shortPreview($text, $length = 55) {
 
 function displayUserLabel($email) {
     $email = trim((string)$email);
+
     if ($email === '') {
         return 'User';
     }
@@ -65,31 +59,189 @@ function buildProfilePictureUrl($filename) {
         return '';
     }
 
-    // If already a full URL (external image), return as-is
     if (strpos($filename, 'http://') === 0 || strpos($filename, 'https://') === 0) {
         return $filename;
     }
 
-    // If already an absolute path starting with /
     if (strpos($filename, '/') === 0) {
-        // Check if file exists on server
         $serverPath = $_SERVER['DOCUMENT_ROOT'] . $filename;
-        if (file_exists($serverPath)) {
-            return $filename;
-        }
-        return ''; // File doesn't exist, return empty to trigger fallback
+        return file_exists($serverPath) ? $filename : '';
     }
 
-    // Build the full path
     $urlPath = rtrim(PROFILE_PICTURE_BASE, '/') . '/' . ltrim($filename, '/');
     $serverPath = $_SERVER['DOCUMENT_ROOT'] . $urlPath;
 
-    // Only return the URL if the file actually exists
-    if (file_exists($serverPath)) {
-        return $urlPath;
+    return file_exists($serverPath) ? $urlPath : '';
+}
+
+/*
+|--------------------------------------------------------------------------
+| A. Sync project conversations from Projects + TeamMembership
+|--------------------------------------------------------------------------
+| This makes sure:
+| - project owners can see their project chats
+| - active team members can see their project chats
+| - missing project conversations are created
+| - missing participants are added
+|--------------------------------------------------------------------------
+*/
+$userProjectIds = [];
+
+/* 1. Projects owned by current user */
+$sqlOwnedProjects = "
+    SELECT project_id
+    FROM Projects
+    WHERE owner_id = ?
+";
+$stmtOwnedProjects = $conn->prepare($sqlOwnedProjects);
+if (!$stmtOwnedProjects) {
+    die("Owned projects query failed: " . $conn->error);
+}
+$stmtOwnedProjects->bind_param("i", $current_user_id);
+$stmtOwnedProjects->execute();
+$resultOwnedProjects = $stmtOwnedProjects->get_result();
+
+while ($row = $resultOwnedProjects->fetch_assoc()) {
+    $userProjectIds[(int)$row['project_id']] = true;
+}
+$stmtOwnedProjects->close();
+
+/* 2. Projects where current user is an active team member */
+$sqlMemberProjects = "
+    SELECT DISTINCT project_id
+    FROM TeamMembership
+    WHERE user_id = ? AND status = 'active'
+";
+$stmtMemberProjects = $conn->prepare($sqlMemberProjects);
+if (!$stmtMemberProjects) {
+    die("Member projects query failed: " . $conn->error);
+}
+$stmtMemberProjects->bind_param("i", $current_user_id);
+$stmtMemberProjects->execute();
+$resultMemberProjects = $stmtMemberProjects->get_result();
+
+while ($row = $resultMemberProjects->fetch_assoc()) {
+    $userProjectIds[(int)$row['project_id']] = true;
+}
+$stmtMemberProjects->close();
+
+/* 3. For each relevant project, ensure conversation + participants exist */
+foreach (array_keys($userProjectIds) as $projectId) {
+    $conversationId = null;
+
+    /* Find project conversation */
+    $sqlFindConversation = "
+        SELECT conversation_id
+        FROM Conversations
+        WHERE project_id = ? AND type = 'project'
+        LIMIT 1
+    ";
+    $stmtFindConversation = $conn->prepare($sqlFindConversation);
+    if (!$stmtFindConversation) {
+        die("Find project conversation failed: " . $conn->error);
+    }
+    $stmtFindConversation->bind_param("i", $projectId);
+    $stmtFindConversation->execute();
+    $resultFindConversation = $stmtFindConversation->get_result();
+
+    if ($conversationRow = $resultFindConversation->fetch_assoc()) {
+        $conversationId = (int)$conversationRow['conversation_id'];
+    } else {
+        /* Create missing project conversation */
+        $sqlCreateConversation = "
+            INSERT INTO Conversations (type, project_id, created_at)
+            VALUES ('project', ?, NOW())
+        ";
+        $stmtCreateConversation = $conn->prepare($sqlCreateConversation);
+        if (!$stmtCreateConversation) {
+            die("Create project conversation failed: " . $conn->error);
+        }
+        $stmtCreateConversation->bind_param("i", $projectId);
+        $stmtCreateConversation->execute();
+        $conversationId = (int)$conn->insert_id;
+        $stmtCreateConversation->close();
     }
 
-    return ''; // Return empty to trigger SVG fallback
+    $stmtFindConversation->close();
+
+    /* Collect owner + active team members */
+    $participantIds = [];
+
+    $sqlOwner = "
+        SELECT owner_id
+        FROM Projects
+        WHERE project_id = ?
+        LIMIT 1
+    ";
+    $stmtOwner = $conn->prepare($sqlOwner);
+    if ($stmtOwner) {
+        $stmtOwner->bind_param("i", $projectId);
+        $stmtOwner->execute();
+        $resultOwner = $stmtOwner->get_result();
+
+        if ($ownerRow = $resultOwner->fetch_assoc()) {
+            $ownerId = (int)$ownerRow['owner_id'];
+            if ($ownerId > 0) {
+                $participantIds[$ownerId] = true;
+            }
+        }
+        $stmtOwner->close();
+    }
+
+    $sqlProjectMembers = "
+        SELECT user_id
+        FROM TeamMembership
+        WHERE project_id = ? AND status = 'active'
+    ";
+    $stmtProjectMembers = $conn->prepare($sqlProjectMembers);
+    if ($stmtProjectMembers) {
+        $stmtProjectMembers->bind_param("i", $projectId);
+        $stmtProjectMembers->execute();
+        $resultProjectMembers = $stmtProjectMembers->get_result();
+
+        while ($memberRow = $resultProjectMembers->fetch_assoc()) {
+            $memberId = (int)$memberRow['user_id'];
+            if ($memberId > 0) {
+                $participantIds[$memberId] = true;
+            }
+        }
+        $stmtProjectMembers->close();
+    }
+
+    /* Insert missing participants */
+    foreach (array_keys($participantIds) as $participantId) {
+        $sqlCheckParticipant = "
+            SELECT 1
+            FROM ConversationParticipants
+            WHERE conversation_id = ? AND user_id = ?
+            LIMIT 1
+        ";
+        $stmtCheckParticipant = $conn->prepare($sqlCheckParticipant);
+        if (!$stmtCheckParticipant) {
+            die("Check participant failed: " . $conn->error);
+        }
+
+        $stmtCheckParticipant->bind_param("ii", $conversationId, $participantId);
+        $stmtCheckParticipant->execute();
+        $resultCheckParticipant = $stmtCheckParticipant->get_result();
+        $exists = $resultCheckParticipant->fetch_assoc();
+        $stmtCheckParticipant->close();
+
+        if (!$exists) {
+            $sqlInsertParticipant = "
+                INSERT INTO ConversationParticipants (conversation_id, user_id, joined_at)
+                VALUES (?, ?, NOW())
+            ";
+            $stmtInsertParticipant = $conn->prepare($sqlInsertParticipant);
+            if (!$stmtInsertParticipant) {
+                die("Insert participant failed: " . $conn->error);
+            }
+
+            $stmtInsertParticipant->bind_param("ii", $conversationId, $participantId);
+            $stmtInsertParticipant->execute();
+            $stmtInsertParticipant->close();
+        }
+    }
 }
 
 /*
@@ -113,10 +265,12 @@ if ($startChatUserId > 0 && $startChatUserId !== $current_user_id) {
 
     if ($targetUserExists) {
         $findPrivateSql = "
-            SELECT c.conversation_id
+            SELECT DISTINCT c.conversation_id
             FROM Conversations c
-            JOIN ConversationParticipants cp1 ON c.conversation_id = cp1.conversation_id
-            JOIN ConversationParticipants cp2 ON c.conversation_id = cp2.conversation_id
+            INNER JOIN ConversationParticipants cp1
+                ON c.conversation_id = cp1.conversation_id
+            INNER JOIN ConversationParticipants cp2
+                ON c.conversation_id = cp2.conversation_id
             WHERE c.type = 'private'
               AND cp1.user_id = ?
               AND cp2.user_id = ?
@@ -124,7 +278,6 @@ if ($startChatUserId > 0 && $startChatUserId !== $current_user_id) {
         ";
 
         $findPrivateStmt = $conn->prepare($findPrivateSql);
-
         if (!$findPrivateStmt) {
             die("Find private conversation failed: " . $conn->error);
         }
@@ -134,7 +287,7 @@ if ($startChatUserId > 0 && $startChatUserId !== $current_user_id) {
         $findPrivateResult = $findPrivateStmt->get_result();
 
         if ($existingConversation = $findPrivateResult->fetch_assoc()) {
-            $selectedConversationId = (int) $existingConversation['conversation_id'];
+            $selectedConversationId = (int)$existingConversation['conversation_id'];
         } else {
             $insertConversationSql = "
                 INSERT INTO Conversations (type, project_id, created_at)
@@ -145,7 +298,7 @@ if ($startChatUserId > 0 && $startChatUserId !== $current_user_id) {
                 die("Create private conversation failed: " . $conn->error);
             }
 
-            $newConversationId = (int) $conn->insert_id;
+            $newConversationId = (int)$conn->insert_id;
 
             $insertParticipantsSql = "
                 INSERT INTO ConversationParticipants (conversation_id, user_id, joined_at)
@@ -153,7 +306,6 @@ if ($startChatUserId > 0 && $startChatUserId !== $current_user_id) {
             ";
 
             $insertParticipantsStmt = $conn->prepare($insertParticipantsSql);
-
             if (!$insertParticipantsStmt) {
                 die("Insert private participants failed: " . $conn->error);
             }
@@ -188,7 +340,7 @@ if ($startChatUserId > 0 && $startChatUserId !== $current_user_id) {
 */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['message'], $_POST['conversation_id'])) {
     $messageText = trim($_POST['message']);
-    $conversationId = (int) $_POST['conversation_id'];
+    $conversationId = (int)$_POST['conversation_id'];
 
     $accessSql = "
         SELECT 1
@@ -241,21 +393,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['message'], $_POST['co
 $conversations = [];
 
 $sqlConversations = "
-    SELECT 
+    SELECT
         c.conversation_id,
         c.type,
         c.project_id,
         c.created_at,
-        p.title AS project_title
+        p.title AS project_title,
+        (
+            SELECT MAX(m.sent_at)
+            FROM Messages m
+            WHERE m.conversation_id = c.conversation_id
+        ) AS last_message_time
     FROM Conversations c
-    JOIN ConversationParticipants cp ON c.conversation_id = cp.conversation_id
-    LEFT JOIN Projects p ON c.project_id = p.project_id
+    INNER JOIN ConversationParticipants cp
+        ON c.conversation_id = cp.conversation_id
+    LEFT JOIN Projects p
+        ON c.project_id = p.project_id
     WHERE cp.user_id = ?
-    ORDER BY c.created_at DESC
+    ORDER BY
+        last_message_time DESC,
+        c.created_at DESC
 ";
 
 $stmtConversations = $conn->prepare($sqlConversations);
-
 if (!$stmtConversations) {
     die("Conversations query prepare failed: " . $conn->error);
 }
@@ -271,15 +431,14 @@ while ($row = $resultConversations->fetch_assoc()) {
     $row['preview_time'] = '';
     $row['avatar'] = '';
 
-    if ($row['type'] === 'project' && !empty($row['project_title'])) {
-        $row['display_title'] = $row['project_title'];
+    if ($row['type'] === 'project') {
+        $row['display_title'] = !empty($row['project_title']) ? $row['project_title'] : 'Project Conversation';
         $row['display_subtitle'] = 'Project Group';
-        $row['avatar'] = '';
     } elseif ($row['type'] === 'private') {
         $otherSql = "
             SELECT u.user_id, u.email, u.profile_picture
             FROM ConversationParticipants cp
-            JOIN Users u ON cp.user_id = u.user_id
+            INNER JOIN Users u ON cp.user_id = u.user_id
             WHERE cp.conversation_id = ?
               AND cp.user_id != ?
             LIMIT 1
@@ -298,7 +457,6 @@ while ($row = $resultConversations->fetch_assoc()) {
             } else {
                 $row['display_title'] = 'Direct Message';
                 $row['display_subtitle'] = 'Private Chat';
-                $row['avatar'] = '';
             }
 
             $otherStmt->close();
@@ -320,7 +478,7 @@ while ($row = $resultConversations->fetch_assoc()) {
         $previewResult = $previewStmt->get_result();
 
         if ($previewRow = $previewResult->fetch_assoc()) {
-            $prefix = ((int) $previewRow['sender_id'] === $current_user_id) ? 'You: ' : '';
+            $prefix = ((int)$previewRow['sender_id'] === $current_user_id) ? 'You: ' : '';
             $row['preview'] = $prefix . $previewRow['content'];
             $row['preview_time'] = $previewRow['sent_at'];
         }
@@ -368,7 +526,6 @@ $messages = [];
 $selectedConversationTitle = "Select a conversation";
 $selectedConversationSubTitle = "Choose a conversation from the left panel";
 $selectedProjectId = null;
-$selectedConversationType = '';
 
 if ($selectedConversationId > 0) {
     $membershipSql = "
@@ -391,7 +548,7 @@ if ($selectedConversationId > 0) {
 
     if ($hasAccess) {
         $conversationSql = "
-            SELECT 
+            SELECT
                 c.conversation_id,
                 c.type,
                 c.project_id,
@@ -403,7 +560,6 @@ if ($selectedConversationId > 0) {
         ";
 
         $conversationStmt = $conn->prepare($conversationSql);
-
         if (!$conversationStmt) {
             die("Conversation header query failed: " . $conn->error);
         }
@@ -413,17 +569,18 @@ if ($selectedConversationId > 0) {
         $conversationResult = $conversationStmt->get_result();
 
         if ($selectedConversation = $conversationResult->fetch_assoc()) {
-            $selectedConversationType = $selectedConversation['type'];
             $selectedProjectId = $selectedConversation['project_id'];
 
-            if ($selectedConversation['type'] === 'project' && !empty($selectedConversation['project_title'])) {
-                $selectedConversationTitle = $selectedConversation['project_title'];
+            if ($selectedConversation['type'] === 'project') {
+                $selectedConversationTitle = !empty($selectedConversation['project_title'])
+                    ? $selectedConversation['project_title']
+                    : 'Project Conversation';
                 $selectedConversationSubTitle = 'Project Group';
             } elseif ($selectedConversation['type'] === 'private') {
                 $otherHeaderSql = "
                     SELECT u.email
                     FROM ConversationParticipants cp
-                    JOIN Users u ON cp.user_id = u.user_id
+                    INNER JOIN Users u ON cp.user_id = u.user_id
                     WHERE cp.conversation_id = ?
                       AND cp.user_id != ?
                     LIMIT 1
@@ -451,7 +608,7 @@ if ($selectedConversationId > 0) {
         $conversationStmt->close();
 
         $sqlMessages = "
-            SELECT 
+            SELECT
                 m.message_id,
                 m.conversation_id,
                 m.sender_id,
@@ -460,13 +617,12 @@ if ($selectedConversationId > 0) {
                 u.email AS sender_email,
                 u.profile_picture
             FROM Messages m
-            JOIN Users u ON m.sender_id = u.user_id
+            INNER JOIN Users u ON m.sender_id = u.user_id
             WHERE m.conversation_id = ?
             ORDER BY m.sent_at ASC
         ";
 
         $stmtMessages = $conn->prepare($sqlMessages);
-
         if (!$stmtMessages) {
             die("Messages query prepare failed: " . $conn->error);
         }
@@ -491,8 +647,9 @@ if ($selectedConversationId > 0) {
     <div class="chat-list-panel">
         <form class="search-box mb-3" method="GET" action="/pages/messages.php">
             <?php if ($selectedConversationId > 0): ?>
-                <input type="hidden" name="conversation_id" value="<?php echo (int) $selectedConversationId; ?>">
+                <input type="hidden" name="conversation_id" value="<?php echo (int)$selectedConversationId; ?>">
             <?php endif; ?>
+
             <input
                 type="text"
                 name="search"
@@ -505,18 +662,18 @@ if ($selectedConversationId > 0) {
 
         <?php if (!empty($conversations)): ?>
             <?php foreach ($conversations as $conversation): ?>
-                <a href="/pages/messages.php?conversation_id=<?php echo (int) $conversation['conversation_id']; ?><?php echo ($searchTerm !== '') ? '&search=' . urlencode($searchTerm) : ''; ?>"
+                <a href="/pages/messages.php?conversation_id=<?php echo (int)$conversation['conversation_id']; ?><?php echo ($searchTerm !== '') ? '&search=' . urlencode($searchTerm) : ''; ?>"
                    class="chat-item <?php echo ($selectedConversationId == $conversation['conversation_id']) ? 'active-chat' : ''; ?>">
 
                     <div class="chat-avatar">
                         <?php if (!empty($conversation['avatar'])): ?>
                             <img src="<?php echo safeText($conversation['avatar']); ?>" alt="Avatar" class="avatar-img" onerror="this.style.display='none'; this.parentElement.querySelector('.fallback-avatar').style.display='block';">
-                            <svg class="fallback-avatar" style="display:none;" xmlns="[w3.org](http://www.w3.org/2000/svg)" viewBox="0 0 24 24" stroke="#2f3a1c" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <svg class="fallback-avatar" style="display:none;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="#2f3a1c" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                 <circle cx="12" cy="7" r="4"></circle>
                                 <path d="M5 20c0-4 4-6 7-6s7 2 7 6"></path>
                             </svg>
                         <?php else: ?>
-                            <svg xmlns="[w3.org](http://www.w3.org/2000/svg)" viewBox="0 0 24 24" stroke="#2f3a1c" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="#2f3a1c" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                 <circle cx="12" cy="7" r="4"></circle>
                                 <path d="M5 20c0-4 4-6 7-6s7 2 7 6"></path>
                             </svg>
@@ -541,7 +698,7 @@ if ($selectedConversationId > 0) {
         <?php else: ?>
             <div class="empty-panel-card">
                 <h6>No conversations yet.</h6>
-                <p>Start a chat from matches or another user profile.</p>
+                <p>Start a chat from matches, project details, or another user profile.</p>
             </div>
         <?php endif; ?>
     </div>
@@ -555,11 +712,11 @@ if ($selectedConversationId > 0) {
 
             <div class="chat-header-actions">
                 <?php if (!empty($selectedProjectId)): ?>
-                    <a href="/pages/project_details.php?project_id=<?php echo (int) $selectedProjectId; ?>" class="btn-outline-olive">View Project</a>
+                    <a href="/pages/project_details.php?project_id=<?php echo (int)$selectedProjectId; ?>" class="btn-outline-olive">View Project</a>
                 <?php endif; ?>
 
                 <?php if ($selectedConversationId > 0): ?>
-                    <a href="/pages/report.php?conversation_id=<?php echo (int) $selectedConversationId; ?>" class="btn-outline-olive">Report</a>
+                    <a href="/pages/report.php?conversation_id=<?php echo (int)$selectedConversationId; ?>" class="btn-outline-olive">Report</a>
                 <?php endif; ?>
             </div>
         </div>
@@ -568,11 +725,9 @@ if ($selectedConversationId > 0) {
             <div class="message-thread">
                 <?php if (!empty($messages)): ?>
                     <?php foreach ($messages as $msg): ?>
-                        <?php 
-                        // Build avatar URL for this message sender
-                        $msgAvatarUrl = buildProfilePictureUrl($msg['profile_picture']);
-                        ?>
-                        <?php if ((int) $msg['sender_id'] === $current_user_id): ?>
+                        <?php $msgAvatarUrl = buildProfilePictureUrl($msg['profile_picture']); ?>
+
+                        <?php if ((int)$msg['sender_id'] === $current_user_id): ?>
                             <div class="message-row message-right">
                                 <div class="message-content-wrap">
                                     <div class="message-bubble my-message"><?php echo safeText($msg['content']); ?></div>
@@ -585,12 +740,12 @@ if ($selectedConversationId > 0) {
                                     <div class="chat-avatar">
                                         <?php if (!empty($msgAvatarUrl)): ?>
                                             <img src="<?php echo safeText($msgAvatarUrl); ?>" alt="Avatar" class="avatar-img" onerror="this.style.display='none'; this.parentElement.querySelector('.fallback-avatar').style.display='block';">
-                                            <svg class="fallback-avatar" style="display:none;" xmlns="[w3.org](http://www.w3.org/2000/svg)" viewBox="0 0 24 24" stroke="#2f3a1c" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                            <svg class="fallback-avatar" style="display:none;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="#2f3a1c" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                                 <circle cx="12" cy="7" r="4"></circle>
                                                 <path d="M5 20c0-4 4-6 7-6s7 2 7 6"></path>
                                             </svg>
                                         <?php else: ?>
-                                            <svg xmlns="[w3.org](http://www.w3.org/2000/svg)" viewBox="0 0 24 24" stroke="#2f3a1c" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="#2f3a1c" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                                 <circle cx="12" cy="7" r="4"></circle>
                                                 <path d="M5 20c0-4 4-6 7-6s7 2 7 6"></path>
                                             </svg>
@@ -609,15 +764,15 @@ if ($selectedConversationId > 0) {
                     <?php endforeach; ?>
                 <?php else: ?>
                     <div class="empty-chat-card">
-                        <h6>Select a conversation</h6>
-                        <p>Select a conversation from the left panel to view messages.</p>
+                        <h6>No messages yet.</h6>
+                        <p>Select a conversation from the left panel or start a new one.</p>
                     </div>
                 <?php endif; ?>
             </div>
 
             <?php if ($selectedConversationId > 0): ?>
                 <form class="message-input-wrap" method="POST" action="">
-                    <input type="hidden" name="conversation_id" value="<?php echo (int) $selectedConversationId; ?>">
+                    <input type="hidden" name="conversation_id" value="<?php echo (int)$selectedConversationId; ?>">
                     <input type="text" name="message" placeholder="Type a message..." required>
                     <button type="submit" class="btn-olive">Send</button>
                 </form>

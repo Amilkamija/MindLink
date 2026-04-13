@@ -18,7 +18,6 @@
     --text-color: #22251f;
     --text-soft: #64695d;
 
-    /* aliases so the page works without changing your project palette */
     --bg-soft: var(--input-bg);
     --white: #ffffff;
     --border-soft: var(--soft-card-border);
@@ -38,10 +37,10 @@ body {
 
 /* Main Wrapper */
 .settings-wrapper {
-    width: 100%;
-    max-width: 980px;
-    margin: 40px auto 60px;
-    padding: 0 20px;
+    width: calc(100% - 24px);
+    max-width: none;
+    margin: 14px 12px 28px 12px;
+    padding: 0;
     box-sizing: border-box;
 }
 
@@ -142,6 +141,30 @@ body {
     border-color: var(--olive);
     box-shadow: 0 0 0 3px rgba(156, 164, 126, 0.18);
     background-color: #fffdf9;
+}
+
+/* Reset Password Link/Button */
+.settings-link-btn {
+    display: inline-block;
+    background-color: var(--input-bg);
+    color: var(--text-dark);
+    border: 1px solid var(--border-soft);
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 0.92rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.settings-link-btn:hover {
+    border-color: var(--olive);
+    box-shadow: 0 0 0 3px rgba(156, 164, 126, 0.18);
+    background-color: #fffdf9;
+    color: var(--text-dark);
+    text-decoration: none;
 }
 
 /* Toggle Row */
@@ -264,8 +287,9 @@ input:checked + .slider:before {
     }
 
     .settings-wrapper {
-        padding: 0 16px;
-        margin: 30px auto 40px;
+        width: calc(100% - 24px);
+        margin: 18px 12px 30px 12px;
+        padding: 0;
     }
 
     .settings-title {

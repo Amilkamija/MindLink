@@ -333,6 +333,53 @@ while ($row = $resultRequests->fetch_assoc()) {
 }
 
 $stmtRequests->close();
+
+/*
+|--------------------------------------------------------------------------
+| 3. Accepted matches
+|--------------------------------------------------------------------------
+*/
+$matchedConnections = [];
+
+$sqlMatched = "
+    SELECT
+        cm.match_id,
+        cm.project_id,
+        cm.created_at,
+        p.title AS project_title,
+        u.user_id,
+        u.email,
+        u.course,
+        u.year,
+        u.bio,
+        u.profile_picture
+    FROM ConnectionMatches cm
+    JOIN Projects p
+        ON cm.project_id = p.project_id
+    JOIN Users u
+        ON u.user_id = CASE
+            WHEN cm.user1_id = ? THEN cm.user2_id
+            ELSE cm.user1_id
+        END
+    WHERE cm.user1_id = ? OR cm.user2_id = ?
+    ORDER BY cm.created_at DESC
+";
+
+$stmtMatched = $conn->prepare($sqlMatched);
+
+if (!$stmtMatched) {
+    die("Matched connections query failed: " . $conn->error);
+}
+
+$stmtMatched->bind_param("iii", $current_user_id, $current_user_id, $current_user_id);
+$stmtMatched->execute();
+$resultMatched = $stmtMatched->get_result();
+
+while ($row = $resultMatched->fetch_assoc()) {
+    $matchedConnections[] = $row;
+}
+
+$stmtMatched->close();
 ?>
 
 <div class="matches-container">
@@ -470,6 +517,67 @@ $stmtRequests->close();
       <div class="empty-state-card" style="max-width:100%;">
         <h3>No match requests yet</h3>
         <p>Incoming connection requests will appear here.</p>
+      </div>
+    <?php endif; ?>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="subheader">Matched Connections:</div>
+
+  <div class="profiles-grid">
+    <?php if (!empty($matchedConnections)): ?>
+      <?php foreach ($matchedConnections as $match): ?>
+        <div class="profile-card">
+          <div class="profile-card-header">It’s a match!</div>
+
+          <div class="profile-card-body">
+            <div class="avatar-wrapper">
+              <div class="avatar-circle">
+                <?php if (!empty($match['profile_picture'])): ?>
+                  <img 
+                    src="<?php echo safeText(buildProfilePictureUrl($match['profile_picture'])); ?>" 
+                    alt="" 
+                    class="profile-avatar-img"
+                    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                  >
+                  <div class="avatar-fallback" style="display:none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                      <path d="M12,12A4,4 0 1,0 8,8A4,4 0 0,0 12,12ZM12,14C9.33,14 4,15.34 4,18V20H20V18C20,15.34 14.67,14 12,14Z"/>
+                    </svg>
+                  </div>
+                <?php else: ?>
+                  <div class="avatar-fallback">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                      <path d="M12,12A4,4 0 1,0 8,8A4,4 0 0,0 12,12ZM12,14C9.33,14 4,15.34 4,18V20H20V18C20,15.34 14.67,14 12,14Z"/>
+                    </svg>
+                  </div>
+                <?php endif; ?>
+              </div>
+
+              <div class="heart-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5c0-2.5 1.99-4.5 4.5-4.5c1.74 0 3.41 1.01 4.22 2.61C11.09 5.01 12.76 4 14.5 4C17.01 4 19 6 19 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                </svg>
+              </div>
+
+              <?php if (!empty($match['year'])): ?>
+                <span class="age-number"><?php echo safeText(yearBadge($match['year'])); ?></span>
+              <?php endif; ?>
+            </div>
+
+            <div class="profile-name"><?php echo safeText(displayUserLabel($match['email'])); ?></div>
+            <div class="profile-course"><?php echo safeText($match['course'] ?: 'Course not listed'); ?></div>
+            <div class="skill-box"><?php echo safeText($match['project_title']); ?></div>
+
+            <a href="/pages/messages.php?user_id=<?php echo (int)$match['user_id']; ?>" class="match-btn message-btn">MESSAGE</a>
+          </div>
+        </div>
+      <?php endforeach; ?>
+    <?php else: ?>
+      <div class="empty-state-card" style="max-width:100%;">
+        <h3>No matches yet</h3>
+        <p>Once both users accept, your matched connections will appear here.</p>
       </div>
     <?php endif; ?>
   </div>

@@ -36,14 +36,12 @@ $settings_stmt->execute();
 $settings_result = $settings_stmt->get_result();
 
 if ($settings_result->num_rows === 0) {
-    // Create default settings for user
     $insert_settings = "INSERT INTO UserSettings (user_id, email_notifications, push_notifications, project_updates, show_profile_matches, allow_profile_search) VALUES (?, 1, 0, 1, 1, 1)";
     $insert_stmt = $conn->prepare($insert_settings);
     $insert_stmt->bind_param("i", $current_user_id);
     $insert_stmt->execute();
     $insert_stmt->close();
-    
-    // Fetch again
+
     $settings_stmt = $conn->prepare($settings_sql);
     $settings_stmt->bind_param("i", $current_user_id);
     $settings_stmt->execute();
@@ -60,37 +58,24 @@ $settings_stmt->close();
 */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_account'])) {
     $new_email = trim($_POST['email'] ?? '');
-    $new_password = $_POST['password'] ?? '';
     $new_phone = trim($_POST['phone'] ?? '');
-    
-    // Validate email
+
     if (!filter_var($new_email, FILTER_VALIDATE_EMAIL)) {
         $error_message = "Please enter a valid email address.";
     } else {
-        // Check if email already exists (for another user)
         $check_email = "SELECT user_id FROM Users WHERE email = ? AND user_id != ?";
         $check_stmt = $conn->prepare($check_email);
         $check_stmt->bind_param("si", $new_email, $current_user_id);
         $check_stmt->execute();
         $check_result = $check_stmt->get_result();
-        
+
         if ($check_result->num_rows > 0) {
             $error_message = "This email is already in use by another account.";
         } else {
-            // Update user data
-            if (!empty($new_password) && $new_password !== '********') {
-                // Update with new password
-                $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
-                $update_sql = "UPDATE Users SET email = ?, password_hash = ?, phone = ? WHERE user_id = ?";
-                $update_stmt = $conn->prepare($update_sql);
-                $update_stmt->bind_param("sssi", $new_email, $hashed_password, $new_phone, $current_user_id);
-            } else {
-                // Update without password change
-                $update_sql = "UPDATE Users SET email = ?, phone = ? WHERE user_id = ?";
-                $update_stmt = $conn->prepare($update_sql);
-                $update_stmt->bind_param("ssi", $new_email, $new_phone, $current_user_id);
-            }
-            
+            $update_sql = "UPDATE Users SET email = ?, phone = ? WHERE user_id = ?";
+            $update_stmt = $conn->prepare($update_sql);
+            $update_stmt->bind_param("ssi", $new_email, $new_phone, $current_user_id);
+
             if ($update_stmt->execute()) {
                 $success_message = "Account information updated successfully.";
                 $user_data['email'] = $new_email;
@@ -113,11 +98,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_notifications'])
     $email_notif = isset($_POST['email_notifications']) ? 1 : 0;
     $push_notif = isset($_POST['push_notifications']) ? 1 : 0;
     $project_updates = isset($_POST['project_updates']) ? 1 : 0;
-    
+
     $update_sql = "UPDATE UserSettings SET email_notifications = ?, push_notifications = ?, project_updates = ? WHERE user_id = ?";
     $update_stmt = $conn->prepare($update_sql);
     $update_stmt->bind_param("iiii", $email_notif, $push_notif, $project_updates, $current_user_id);
-    
+
     if ($update_stmt->execute()) {
         $success_message = "Notification settings updated successfully.";
         $settings_data['email_notifications'] = $email_notif;
@@ -137,11 +122,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_notifications'])
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_privacy'])) {
     $show_profile = isset($_POST['show_profile']) ? 1 : 0;
     $profile_search = isset($_POST['profile_search']) ? 1 : 0;
-    
+
     $update_sql = "UPDATE UserSettings SET show_profile_matches = ?, allow_profile_search = ? WHERE user_id = ?";
     $update_stmt = $conn->prepare($update_sql);
     $update_stmt->bind_param("iii", $show_profile, $profile_search, $current_user_id);
-    
+
     if ($update_stmt->execute()) {
         $success_message = "Privacy settings updated successfully.";
         $settings_data['show_profile_matches'] = $show_profile;
@@ -155,13 +140,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_privacy'])) {
 
 <div class="settings-wrapper">
     <h1 class="settings-title">Settings</h1>
-    
+
     <?php if ($success_message): ?>
         <div class="settings-alert settings-alert-success">
             <?php echo safeText($success_message); ?>
         </div>
     <?php endif; ?>
-    
+
     <?php if ($error_message): ?>
         <div class="settings-alert settings-alert-error">
             <?php echo safeText($error_message); ?>
@@ -182,7 +167,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_privacy'])) {
 
                     <div class="settings-field-row">
                         <label>Change Password</label>
-                        <input type="password" name="password" value="********" placeholder="Enter new password">
+                        <a href="/pages/reset_password.php" class="settings-link-btn"> Reset Password</a>
                     </div>
 
                     <div class="settings-field-row">
@@ -269,7 +254,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_privacy'])) {
                     <a href="/pages/report.php">Report a Problem</a>
                 </div>
                 <div class="settings-support-item">
-                    <a href="/pages/guidelines.php">Community Guidelines</a>
+                    <a href="/pages/faq.php">FAQ</a>
                 </div>
             </div>
         </div>
