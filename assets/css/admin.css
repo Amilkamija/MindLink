@@ -264,22 +264,35 @@ body {
 .admin-table-header,
 .admin-table-row {
   display: grid;
-  grid-template-columns: 1.5fr 0.9fr 0.7fr 1fr 2fr;
+  grid-template-columns: 1.8fr 1fr 0.5fr 0.8fr 2.2fr;
   align-items: center;
+  column-gap: 12px;
 }
 
 .admin-table-header {
   background-color: var(--dark-green);
   color: #f5f4ef;
-  font-size: 1rem;
+  font-size: 0.85rem;
   letter-spacing: 1px;
   padding: 10px 14px;
 }
 
 .admin-table-row {
-  padding: 12px 14px;
-  font-size: 1.1rem;
+  padding: 10px 14px;
+  font-size: 0.85rem;
   border-top: 1px solid var(--line-color);
+}
+
+.admin-table-row > div {
+  font-size: 0.85rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-table-row .admin-actions {
+  white-space: normal;
+  overflow: visible;
 }
 
 .status-active {
@@ -331,7 +344,6 @@ body {
 .report-card {
   background-color: #e2dfd7;
   border-radius: 12px;
-  overflow: hidden;
   margin-bottom: 22px;
 }
 
@@ -341,6 +353,7 @@ body {
   font-size: 1rem;
   padding: 8px 12px;
   font-weight: 500;
+  border-radius: 12px 12px 0 0;
 }
 
 .report-card-body {
@@ -376,6 +389,7 @@ body {
 .report-actions {
   display: flex;
   gap: 10px;
+  flex-wrap: wrap;
 }
 
 .report-btn {
