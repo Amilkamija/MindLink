@@ -307,11 +307,6 @@ $myStmt->close();
 
 <div class="applications-page">
     <div class="content-area">
-        <div class="page-top">
-            <div class="section-pill">Applications</div>
-        </div>
-
-        <div class="section-line"></div>
 
         <?php if ($success !== ''): ?>
             <div class="alert alert-success"><?php echo safeText($success); ?></div>

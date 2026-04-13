@@ -35,9 +35,9 @@ body {
 
 /* Main content area */
 .content-area {
-  padding: 24px 34px 40px;
+  padding: 18px 34px 40px;
   max-width: 1100px;
-  margin: 0 auto;
+  margin: -4px 0 0 6px;
 }
 
 /* Cards */
@@ -52,7 +52,7 @@ body {
 
 /* Top header card */
 .header-card {
-  background-color: var(--light-green);
+  background-color: var(--mid-green);
   border: 1px solid var(--card-border);
 }
 
@@ -334,4 +334,37 @@ body {
     flex-direction: column;
     align-items: flex-start;
   }
+}
+
+/* Safe fixes for updated project_details.php */
+.role-item span {
+  color: var(--dark-green);
+  font-size: 0.88rem;
+}
+
+.project-actions .detail-btn {
+  flex-shrink: 0;
+}
+
+.info-value,
+.member-role,
+.member-name,
+.role-item {
+  word-break: break-word;
+}
+
+.roles-list .empty-text,
+.member-list .empty-text {
+  display: block;
+  width: 100%;
+}
+
+.info-value.status-full {
+  color: #8b3a3a;
+  font-weight: 700;
+}
+
+.info-value.status-open {
+  color: var(--dark-green);
+  font-weight: 700;
 }
