@@ -19,8 +19,8 @@ require_once __DIR__ . '/../config/session.php';
   <div class="container-fluid px-4">
 
     <div class="d-flex gap-3 align-items-center">
-      <a class="nav-link" href="/pages/contact.php">CONTACT</a>
-      <a class="nav-link" href="/pages/faq.php">FAQ</a>
+      <a class="nav-link" href="/pages/contact.php">CONTACT US</a>
+      <a class="nav-link" href="/pages/aboutus.php">ABOUT US</a>
     </div>
 
     <a class="navbar-logo mx-auto d-flex align-items-center gap-0" href="/index.php">
