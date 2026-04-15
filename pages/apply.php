@@ -19,7 +19,6 @@ if ($project_id <= 0) {
 $success = '';
 $error = '';
 
-// Check that current user still exists and is allowed to apply
 $user_sql = "
     SELECT user_id, status
     FROM Users
