@@ -153,27 +153,6 @@ if ($logged_in) {
 
     <br>
 
-    <section class="about-section">
-        <h3 class="about-section-title">Who It Is For</h3>
-        <p class="about-section-subtitle">
-            Created for university students looking for better ways to work and connect.
-        </p>
-        <hr>
-
-        <div class="about-panel panel-4">
-            <p>
-                MindLink is for students looking for teammates for coursework, hackathons, development projects,
-                and other collaborative university work.
-            </p>
-            <p>
-                Whether you already have an idea or want to join someone else’s project, the platform is designed
-                to help you find the right people faster and with more confidence.
-            </p>
-        </div>
-    </section>
-
-    <br><br>
-
     <div class="text-center about-final-cta">
         <h3 class="about-final-title">Start building better teams with MindLink</h3>
 
