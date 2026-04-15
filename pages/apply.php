@@ -9,7 +9,6 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $current_user_id = (int)$_SESSION['user_id'];
-
 $project_id = isset($_GET['project_id']) ? (int)$_GET['project_id'] : 0;
 
 if ($project_id <= 0) {
@@ -19,6 +18,35 @@ if ($project_id <= 0) {
 
 $success = '';
 $error = '';
+
+$user_sql = "
+    SELECT user_id, status
+    FROM Users
+    WHERE user_id = ?
+    LIMIT 1
+";
+
+$user_stmt = $conn->prepare($user_sql);
+if (!$user_stmt) {
+    die("Prepare failed: " . $conn->error);
+}
+
+$user_stmt->bind_param("i", $current_user_id);
+$user_stmt->execute();
+$user_result = $user_stmt->get_result();
+$current_user = $user_result->fetch_assoc();
+$user_stmt->close();
+
+if (!$current_user) {
+    session_unset();
+    session_destroy();
+    header("Location: /pages/login.php");
+    exit();
+}
+
+if (($current_user['status'] ?? 'active') === 'suspended') {
+    $error = "Your account is suspended and you cannot apply to projects.";
+}
 
 $project_sql = "
     SELECT 
@@ -54,15 +82,9 @@ if (!$project) {
     exit();
 }
 
-if ((int)$project['owner_id'] === $current_user_id) {
-    $error = "You cannot apply to your own project.";
-}
-
-if ($project['status'] === 'completed') {
-    $error = "This project has already been completed and is no longer accepting applications.";
-}
-
 $roles = [];
+$has_open_roles = false;
+
 $roles_sql = "
     SELECT role_id, title, description, filled
     FROM Roles
@@ -81,18 +103,38 @@ $roles_result = $roles_stmt->get_result();
 
 while ($row = $roles_result->fetch_assoc()) {
     $roles[] = $row;
+    if ((int)$row['filled'] === 0) {
+        $has_open_roles = true;
+    }
 }
 $roles_stmt->close();
 
+if ((int)$project['owner_id'] === $current_user_id) {
+    $error = "You cannot apply to your own project.";
+}
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($error)) {
+if ($project['status'] === 'completed') {
+    $error = "This project has already been completed and is no longer accepting applications.";
+}
+
+if (empty($roles)) {
+    $error = "This project does not currently have any roles available.";
+}
+
+if (!empty($roles) && !$has_open_roles) {
+    $error = "This project is full and is no longer accepting applications.";
+}
+
+$can_apply = empty($error);
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $can_apply) {
     $selected_role_id = isset($_POST['selected_role']) ? (int)$_POST['selected_role'] : 0;
     $application_message = trim($_POST['application_message'] ?? '');
 
     if ($selected_role_id <= 0) {
         $error = "Please choose a role.";
+        $can_apply = false;
     } else {
-        
         $check_role_sql = "
             SELECT role_id, title, filled
             FROM Roles
@@ -113,10 +155,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($error)) {
 
         if (!$selected_role) {
             $error = "Invalid role selected.";
+            $can_apply = false;
         } elseif ((int)$selected_role['filled'] === 1) {
             $error = "That role has already been filled.";
+            $can_apply = false;
         } else {
-            
             $duplicate_sql = "
                 SELECT application_id
                 FROM Applications
@@ -137,6 +180,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($error)) {
 
             if ($already_applied) {
                 $error = "You have already applied for this role.";
+                $can_apply = false;
             } else {
                 $insert_sql = "
                     INSERT INTO Applications (project_id, role_id, applicant_id, message, status, applied_at)
@@ -154,6 +198,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($error)) {
                     $success = "Your application has been submitted successfully.";
                 } else {
                     $error = "Failed to submit application. Please try again.";
+                    $can_apply = false;
                 }
 
                 $insert_stmt->close();
@@ -246,6 +291,7 @@ function statusClass($status) {
                             type="button"
                             class="select-role-btn"
                             onclick="document.getElementById('selected_role').value='<?php echo (int)$role['role_id']; ?>';"
+                            <?php echo $can_apply ? '' : 'disabled'; ?>
                         >
                             Select
                         </button>
@@ -269,7 +315,7 @@ function statusClass($status) {
         <div class="application-grid">
             <div class="field-group">
                 <label for="selected_role">Selected Role</label>
-                <select id="selected_role" name="selected_role" required>
+                <select id="selected_role" name="selected_role" required <?php echo $can_apply ? '' : 'disabled'; ?>>
                     <option value="">Choose a role</option>
                     <?php foreach ($roles as $role): ?>
                         <?php if ((int)$role['filled'] === 0): ?>
@@ -288,6 +334,7 @@ function statusClass($status) {
                     name="application_message"
                     rows="6"
                     placeholder="Write a short message to the project owner..."
+                    <?php echo $can_apply ? '' : 'disabled'; ?>
                 ><?php echo htmlspecialchars($_POST['application_message'] ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
             </div>
         </div>
@@ -295,7 +342,7 @@ function statusClass($status) {
         <div class="application-actions">
             <a href="/pages/projects.php" class="cancel-apply-btn">Cancel</a>
 
-            <?php if ($project['status'] === 'completed' || (int)$project['owner_id'] === $current_user_id || empty($roles)): ?>
+            <?php if (!$can_apply): ?>
                 <button type="button" class="submit-application-btn" disabled>Submit Application</button>
             <?php else: ?>
                 <button type="submit" class="submit-application-btn">Submit Application</button>
