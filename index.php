@@ -20,6 +20,7 @@ if (isset($_SESSION['user_id'])) {
     <h6 class="paragraph">Use MindLink! Connect with partners who are as serious about the project as you are.</h6>
     <h6 class="paragraph">And when the work is done, you might just find a connection worth keeping.</h6>
     <br>
+    
     <hr>
     
     <div class="row mt-5 g-3">
@@ -48,10 +49,19 @@ if (isset($_SESSION['user_id'])) {
             </div>
         </div>
     </div>
+    <hr>
 
-<br>
-<br>
-<br>
+<div class="text-center mt-5">
+    <h2 class="title">Who is MindLink for?</h2>
+    <h6 class="paragraph mt-3">
+        MindLink is built for university students looking for better teammates for coursework, hackathons,
+        and collaborative projects.
+    </h6>
+    <h6 class="paragraph">
+        Whether you have an idea or want to join someone else’s, it helps you find the right people faster,
+        with more confidence.
+    </h6>
+</div>
     <div class="text-center mt-4">
         <a href="/pages/sign_up.php" class="btn btn-signup px-4 py-2">Get Started</a>
     </div>
