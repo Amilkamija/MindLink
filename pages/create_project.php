@@ -26,7 +26,39 @@ $role_1_title = '';
 $role_2_title = '';
 $role_3_title = '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+// Check that current user still exists and is allowed to create projects
+$user_sql = "
+    SELECT user_id, status
+    FROM Users
+    WHERE user_id = ?
+    LIMIT 1
+";
+
+$user_stmt = $conn->prepare($user_sql);
+if (!$user_stmt) {
+    die("Prepare failed: " . $conn->error);
+}
+
+$user_stmt->bind_param("i", $current_user_id);
+$user_stmt->execute();
+$user_result = $user_stmt->get_result();
+$current_user = $user_result->fetch_assoc();
+$user_stmt->close();
+
+if (!$current_user) {
+    session_unset();
+    session_destroy();
+    header("Location: /pages/login.php");
+    exit();
+}
+
+if (($current_user['status'] ?? 'active') === 'suspended') {
+    $error = "Your account is suspended and you cannot create projects.";
+}
+
+$can_create_project = empty($error);
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $can_create_project) {
     $project_title = trim($_POST['project_title'] ?? '');
     $module_subject = trim($_POST['module_subject'] ?? '');
     $project_year = trim($_POST['project_year'] ?? '');
@@ -149,7 +181,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $conn->commit();
 
             $success = "Project created successfully.";
-
             $project_title = '';
             $module_subject = '';
             $project_year = '';
@@ -167,10 +198,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
+
+$can_create_project = empty($error);
 ?>
 
 <div class="col-lg-10 content-area">
-
     <div class="create-project-top">
         <div class="section-pill create-project-pill">Create Project</div>
     </div>
@@ -186,12 +218,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php endif; ?>
 
     <div class="create-layout">
-
         <form action="/pages/create_project.php" method="POST" class="create-project-form">
-
             <div class="form-card">
                 <div class="form-card-title">Project Details</div>
-
                 <div class="create-grid two-col">
                     <div class="field-group full-width">
                         <label for="project_title">Project Title</label>
@@ -202,6 +231,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             placeholder="Enter project title"
                             value="<?php echo htmlspecialchars($project_title, ENT_QUOTES, 'UTF-8'); ?>"
                             required
+                            <?php echo $can_create_project ? '' : 'disabled'; ?>
                         >
                     </div>
 
@@ -213,12 +243,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             name="module_subject"
                             placeholder="e.g. CS4416 Software Development"
                             value="<?php echo htmlspecialchars($module_subject, ENT_QUOTES, 'UTF-8'); ?>"
+                            <?php echo $can_create_project ? '' : 'disabled'; ?>
                         >
                     </div>
 
                     <div class="field-group">
                         <label for="project_year">Year</label>
-                        <select id="project_year" name="project_year">
+                        <select id="project_year" name="project_year" <?php echo $can_create_project ? '' : 'disabled'; ?>>
                             <option value="">Select year</option>
                             <option value="Year 1" <?php echo ($project_year === 'Year 1') ? 'selected' : ''; ?>>Year 1</option>
                             <option value="Year 2" <?php echo ($project_year === 'Year 2') ? 'selected' : ''; ?>>Year 2</option>
@@ -234,6 +265,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             name="project_description"
                             placeholder="Describe the project..."
                             required
+                            <?php echo $can_create_project ? '' : 'disabled'; ?>
                         ><?php echo htmlspecialchars($project_description, ENT_QUOTES, 'UTF-8'); ?></textarea>
                     </div>
                 </div>
@@ -243,7 +275,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <div class="form-card">
                 <div class="form-card-title">Requirements</div>
-
                 <div class="create-grid two-col">
                     <div class="field-group">
                         <label for="team_size">Team Size</label>
@@ -256,12 +287,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             max="50"
                             value="<?php echo htmlspecialchars($team_size, ENT_QUOTES, 'UTF-8'); ?>"
                             required
+                            <?php echo $can_create_project ? '' : 'disabled'; ?>
                         >
                     </div>
 
                     <div class="field-group">
                         <label for="project_status">Project Status</label>
-                        <select id="project_status" name="project_status" required>
+                        <select id="project_status" name="project_status" required <?php echo $can_create_project ? '' : 'disabled'; ?>>
                             <option value="open" <?php echo ($project_status === 'open') ? 'selected' : ''; ?>>Open for applications</option>
                             <option value="in_progress" <?php echo ($project_status === 'in_progress') ? 'selected' : ''; ?>>In progress</option>
                             <option value="completed" <?php echo ($project_status === 'completed') ? 'selected' : ''; ?>>Completed</option>
@@ -276,6 +308,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             name="deadline"
                             value="<?php echo htmlspecialchars($deadline, ENT_QUOTES, 'UTF-8'); ?>"
                             required
+                            <?php echo $can_create_project ? '' : 'disabled'; ?>
                         >
                     </div>
 
@@ -287,13 +320,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             name="skills_tags"
                             placeholder="e.g. PHP, MySQL, UI Design"
                             value="<?php echo htmlspecialchars($skills_tags, ENT_QUOTES, 'UTF-8'); ?>"
+                            <?php echo $can_create_project ? '' : 'disabled'; ?>
                         >
                     </div>
                 </div>
             </div>
 
             <div class="roles-panel">
-
                 <div class="roles-panel-title">Roles Needed</div>
 
                 <div class="role-card">
@@ -304,6 +337,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         name="role_1_title"
                         placeholder="e.g. Backend Developer"
                         value="<?php echo htmlspecialchars($role_1_title, ENT_QUOTES, 'UTF-8'); ?>"
+                        <?php echo $can_create_project ? '' : 'disabled'; ?>
                     >
                 </div>
 
@@ -315,6 +349,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         name="role_2_title"
                         placeholder="e.g. UI/UX Designer"
                         value="<?php echo htmlspecialchars($role_2_title, ENT_QUOTES, 'UTF-8'); ?>"
+                        <?php echo $can_create_project ? '' : 'disabled'; ?>
                     >
                 </div>
 
@@ -326,20 +361,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         name="role_3_title"
                         placeholder="e.g. Project Manager"
                         value="<?php echo htmlspecialchars($role_3_title, ENT_QUOTES, 'UTF-8'); ?>"
+                        <?php echo $can_create_project ? '' : 'disabled'; ?>
                     >
                 </div>
 
                 <div class="roles-actions">
                     <a href="/pages/projects.php" class="save-draft-btn">Cancel</a>
-                    <button type="submit" class="publish-project-btn">Publish</button>
+
+                    <?php if (!$can_create_project): ?>
+                        <button type="button" class="publish-project-btn" disabled>Publish</button>
+                    <?php else: ?>
+                        <button type="submit" class="publish-project-btn">Publish</button>
+                    <?php endif; ?>
                 </div>
-
             </div>
-
         </form>
-
     </div>
-
 </div>
 
 <?php
