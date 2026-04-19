@@ -46,6 +46,8 @@ if (!$current_user) {
 
 if (($current_user['status'] ?? 'active') === 'suspended') {
     $error = "Your account is suspended and you cannot apply to projects.";
+} elseif (empty($current_user['course']) || empty($current_user['year']) || empty($current_user['bio'])) {
+    $error = "incomplete_profile";
 }
 
 $project_sql = "
@@ -246,7 +248,11 @@ function statusClass($status) {
     <?php endif; ?>
 
     <?php if (!empty($error)): ?>
-        <div class="alert alert-danger"><?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?></div>
+        <?php if ($error === 'incomplete_profile'): ?>
+            <div class="alert alert-danger">You need to complete your profile (course, year, and bio) before applying. <a href="/pages/profile.php">Complete your profile</a></div>
+        <?php else: ?>
+            <div class="alert alert-danger"><?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?></div>
+        <?php endif; ?>
     <?php endif; ?>
 
     <div class="apply-project-card">

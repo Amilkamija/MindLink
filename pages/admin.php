@@ -105,9 +105,9 @@ $users = $conn->query("
 
 $userReportsRaw = $conn->query("
     SELECT r.report_id, r.reason, r.created_at, r.reported_user_id,
-    rep.email AS reporter_email
+    COALESCE(rep.email, '[deleted user]') AS reporter_email
     FROM Reports r
-    JOIN Users rep ON r.reporter_id = rep.user_id
+    LEFT JOIN Users rep ON r.reporter_id = rep.user_id
     WHERE r.status = 'open' AND r.project_id IS NULL
     ORDER BY r.created_at DESC
 ")->fetch_all(MYSQLI_ASSOC);
@@ -253,7 +253,7 @@ require_once __DIR__ . '/../includes/header2.php';
             </div>
             <div class="admin-actions">
 
-              <?php if ($user['role'] === 'admin'): ?>
+              <?php if ($user['user_id'] == $_SESSION['user_id']): ?>
                 <span style="color:#999;">—</span>
 
               <?php elseif ($user['status'] === 'suspended'): ?>

@@ -5,6 +5,18 @@ require_once __DIR__ . '/../config/db.php';
 
 $current_user_id = $_SESSION['user_id'] ?? null;
 
+$current_user_suspended = false;
+$current_profile_incomplete = false;
+if ($current_user_id) {
+    $s = $conn->prepare("SELECT status, course, year, bio FROM Users WHERE user_id = ? LIMIT 1");
+    $s->bind_param("i", $current_user_id);
+    $s->execute();
+    $s_row = $s->get_result()->fetch_assoc();
+    $s->close();
+    $current_user_suspended = ($s_row && $s_row['status'] === 'suspended');
+    $current_profile_incomplete = ($s_row && (empty($s_row['course']) || empty($s_row['year']) || empty($s_row['bio'])));
+}
+
 $status_filter = $_GET['status'] ?? '';
 $allowed_statuses = ['open', 'in_progress', 'completed'];
 
@@ -137,6 +149,12 @@ function shortText($text, $length = 140) {
                     <?php if (!$current_user_id): ?>
                         <a href="/pages/login.php" class="apply-btn">Login to Apply</a>
 
+                    <?php elseif ($current_user_suspended): ?>
+                        <button type="button" class="apply-btn" data-bs-toggle="modal" data-bs-target="#suspendedModal">Apply</button>
+
+                    <?php elseif ($current_profile_incomplete): ?>
+                        <button type="button" class="apply-btn" data-bs-toggle="modal" data-bs-target="#incompleteProfileModal">Apply</button>
+
                     <?php elseif ((int)$current_user_id === (int)$project['owner_id']): ?>
                         <span class="apply-btn" style="opacity: 0.6; pointer-events: none;">Your Project</span>
 
@@ -162,6 +180,38 @@ function shortText($text, $length = 140) {
         </div>
     <?php endif; ?>
 </div>
+
+<?php if ($current_profile_incomplete): ?>
+<div class="modal fade" id="incompleteProfileModal" tabindex="-1">
+<div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content p-4 text-center">
+    <h5 class="modal-title mb-2">Complete Your Profile First</h5>
+    <hr>
+    <p style="font-size:0.95rem;">You need to fill in your <strong>course</strong>, <strong>year</strong>, and <strong>bio</strong> before you can apply to projects.</p>
+    <div class="d-flex justify-content-center gap-3 mt-3">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <a href="/pages/profile.php" class="btn btn-success">Go to Profile</a>
+    </div>
+    </div>
+</div>
+</div>
+<?php endif; ?>
+
+<?php if ($current_user_suspended): ?>
+<div class="modal fade" id="suspendedModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content p-4 text-center">
+    <h5 class="modal-title mb-2">Account Suspended</h5>
+    <hr>
+    <p style="font-size:0.95rem;">Your account has been suspended/removed. You are not able to apply to projects at this time.</p>
+    <p style="font-size:0.9rem; color:#888;">If you believe this is a mistake, please contact support.</p>
+    <div class="d-flex justify-content-center mt-3">
+    <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+    </div>
+    </div>
+    </div>
+</div>
+<?php endif; ?>
 
 <?php
 $stmt->close();
