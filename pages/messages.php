@@ -1,4 +1,9 @@
 <?php
+/**
+ * @file messages.php
+ * @brief MindLink – secure and dynamic messaging page
+ */
+
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
@@ -14,385 +19,285 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
-$current_user_id = (int) $_SESSION['user_id'];
-$searchTerm = isset($_GET['search']) ? trim($_GET['search']) : '';
-$selectedConversationId = isset($_GET['conversation_id']) && is_numeric($_GET['conversation_id'])
-    ? (int) $_GET['conversation_id']
-    : 0;
+$currentUserId = (int)($_SESSION['user_id'] ?? 0);
+$selectedConversationId = isset($_GET['conversation_id']) ? (int)$_GET['conversation_id'] : 0;
+$targetUserId = isset($_GET['user_id']) ? (int)$_GET['user_id'] : 0;
+$searchTerm = trim($_GET['search'] ?? '');
+$errorMessage = '';
+$infoMessage = '';
 
-$startChatUserId = isset($_GET['user_id']) && is_numeric($_GET['user_id'])
-    ? (int) $_GET['user_id']
-    : 0;
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+$csrfToken = $_SESSION['csrf_token'];
 
 define('PROFILE_PICTURE_BASE', '/uploads/profile_pictures/');
 
-function safeText($value) {
-    return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
-}
-
-function shortPreview($text, $length = 55) {
-    $text = trim((string)$text);
-    if (mb_strlen($text) <= $length) {
-        return $text;
-    }
-    return mb_substr($text, 0, $length) . '...';
+/* ---------- Utility ---------- */
+function safeText($v) {
+    return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
 }
 
 function displayUserLabel($email) {
-    $email = trim((string)$email);
+    return ($email && strpos($email, '@') !== false) ? explode('@', $email)[0] : ($email ?: 'User');
+}
 
-    if ($email === '') {
-        return 'User';
+function buildProfilePictureUrl($f) {
+    $f = trim((string)$f);
+    if ($f === '') return '';
+
+    // PHP 7+ compatible instead of str_starts_with()
+    if (
+        strpos($f, '/') === 0 ||
+        strpos($f, 'http://') === 0 ||
+        strpos($f, 'https://') === 0
+    ) {
+        return $f;
     }
 
-    if (strpos($email, '@') !== false) {
-        return explode('@', $email)[0];
+    $u = rtrim(PROFILE_PICTURE_BASE, '/') . '/' . ltrim($f, '/');
+    $s = $_SERVER['DOCUMENT_ROOT'] . $u;
+    return file_exists($s) ? $u : '';
+}
+
+function formatTime($dt) {
+    $t = strtotime((string)$dt);
+    if (!$t) return '';
+
+    $today = strtotime(date('Y-m-d'));
+    $d = strtotime(date('Y-m-d', $t));
+
+    if ($d === $today) return 'Today ' . date('H:i', $t);
+    if ($d === strtotime('-1 day', $today)) return 'Yesterday ' . date('H:i', $t);
+
+    return date('d M Y H:i', $t);
+}
+
+function normalizeConversationType($type) {
+    $type = strtolower(trim((string)$type));
+    return in_array($type, ['project', 'private'], true) ? $type : 'private';
+}
+
+function normalizeUserStatus($status) {
+    $status = strtolower(trim((string)$status));
+    return $status !== '' ? $status : 'active';
+}
+
+function pageExists($filename) {
+    return file_exists(__DIR__ . '/' . ltrim($filename, '/'));
+}
+
+function getOrCreatePrivateConversation(mysqli $conn, int $currentUserId, int $targetUserId): int {
+    if ($currentUserId <= 0 || $targetUserId <= 0 || $currentUserId === $targetUserId) {
+        return 0;
     }
 
-    return $email;
-}
-
-function buildProfilePictureUrl($filename) {
-    $filename = trim((string)$filename);
-
-    if ($filename === '') {
-        return '';
-    }
-
-    if (strpos($filename, 'http://') === 0 || strpos($filename, 'https://') === 0) {
-        return $filename;
-    }
-
-    if (strpos($filename, '/') === 0) {
-        $serverPath = $_SERVER['DOCUMENT_ROOT'] . $filename;
-        return file_exists($serverPath) ? $filename : '';
-    }
-
-    $urlPath = rtrim(PROFILE_PICTURE_BASE, '/') . '/' . ltrim($filename, '/');
-    $serverPath = $_SERVER['DOCUMENT_ROOT'] . $urlPath;
-
-    return file_exists($serverPath) ? $urlPath : '';
-}
-
-/*
-|--------------------------------------------------------------------------
-| A. Sync project conversations from Projects + TeamMembership
-|--------------------------------------------------------------------------
-| This makes sure:
-| - project owners can see their project chats
-| - active team members can see their project chats
-| - missing project conversations are created
-| - missing participants are added
-|--------------------------------------------------------------------------
-*/
-$userProjectIds = [];
-
-/* 1. Projects owned by current user */
-$sqlOwnedProjects = "
-    SELECT project_id
-    FROM Projects
-    WHERE owner_id = ?
-";
-$stmtOwnedProjects = $conn->prepare($sqlOwnedProjects);
-if (!$stmtOwnedProjects) {
-    die("Owned projects query failed: " . $conn->error);
-}
-$stmtOwnedProjects->bind_param("i", $current_user_id);
-$stmtOwnedProjects->execute();
-$resultOwnedProjects = $stmtOwnedProjects->get_result();
-
-while ($row = $resultOwnedProjects->fetch_assoc()) {
-    $userProjectIds[(int)$row['project_id']] = true;
-}
-$stmtOwnedProjects->close();
-
-/* 2. Projects where current user is an active team member */
-$sqlMemberProjects = "
-    SELECT DISTINCT project_id
-    FROM TeamMembership
-    WHERE user_id = ? AND status = 'active'
-";
-$stmtMemberProjects = $conn->prepare($sqlMemberProjects);
-if (!$stmtMemberProjects) {
-    die("Member projects query failed: " . $conn->error);
-}
-$stmtMemberProjects->bind_param("i", $current_user_id);
-$stmtMemberProjects->execute();
-$resultMemberProjects = $stmtMemberProjects->get_result();
-
-while ($row = $resultMemberProjects->fetch_assoc()) {
-    $userProjectIds[(int)$row['project_id']] = true;
-}
-$stmtMemberProjects->close();
-
-/* 3. For each relevant project, ensure conversation + participants exist */
-foreach (array_keys($userProjectIds) as $projectId) {
-    $conversationId = null;
-
-    /* Find project conversation */
-    $sqlFindConversation = "
-        SELECT conversation_id
-        FROM Conversations
-        WHERE project_id = ? AND type = 'project'
+    $findSql = "
+        SELECT c.conversation_id
+        FROM Conversations c
+        JOIN ConversationParticipants cp1 ON c.conversation_id = cp1.conversation_id
+        JOIN ConversationParticipants cp2 ON c.conversation_id = cp2.conversation_id
+        WHERE c.type = 'private'
+          AND cp1.user_id = ?
+          AND cp2.user_id = ?
         LIMIT 1
     ";
-    $stmtFindConversation = $conn->prepare($sqlFindConversation);
-    if (!$stmtFindConversation) {
-        die("Find project conversation failed: " . $conn->error);
+    $findStmt = $conn->prepare($findSql);
+    if (!$findStmt) {
+        return 0;
     }
-    $stmtFindConversation->bind_param("i", $projectId);
-    $stmtFindConversation->execute();
-    $resultFindConversation = $stmtFindConversation->get_result();
 
-    if ($conversationRow = $resultFindConversation->fetch_assoc()) {
-        $conversationId = (int)$conversationRow['conversation_id'];
-    } else {
-        /* Create missing project conversation */
-        $sqlCreateConversation = "
-            INSERT INTO Conversations (type, project_id, created_at)
-            VALUES ('project', ?, NOW())
-        ";
-        $stmtCreateConversation = $conn->prepare($sqlCreateConversation);
-        if (!$stmtCreateConversation) {
-            die("Create project conversation failed: " . $conn->error);
+    $findStmt->bind_param("ii", $currentUserId, $targetUserId);
+    $findStmt->execute();
+    $existing = $findStmt->get_result()->fetch_assoc();
+    $findStmt->close();
+
+    if ($existing && !empty($existing['conversation_id'])) {
+        return (int)$existing['conversation_id'];
+    }
+
+    $conn->begin_transaction();
+
+    try {
+        $insertConversation = $conn->prepare("
+            INSERT INTO Conversations (type, created_at)
+            VALUES ('private', NOW())
+        ");
+
+        if (!$insertConversation) {
+            throw new Exception("Could not create conversation.");
         }
-        $stmtCreateConversation->bind_param("i", $projectId);
-        $stmtCreateConversation->execute();
+
+        $insertConversation->execute();
         $conversationId = (int)$conn->insert_id;
-        $stmtCreateConversation->close();
+        $insertConversation->close();
+
+        $insertParticipant = $conn->prepare("
+            INSERT INTO ConversationParticipants (conversation_id, user_id)
+            VALUES (?, ?)
+        ");
+
+        if (!$insertParticipant) {
+            throw new Exception("Could not add participants.");
+        }
+
+        $insertParticipant->bind_param("ii", $conversationId, $currentUserId);
+        $insertParticipant->execute();
+
+        $insertParticipant->bind_param("ii", $conversationId, $targetUserId);
+        $insertParticipant->execute();
+
+        $insertParticipant->close();
+
+        $conn->commit();
+        return $conversationId;
+    } catch (Exception $e) {
+        $conn->rollback();
+        return 0;
     }
+}
 
-    $stmtFindConversation->close();
+/* ---------- Check current user status ---------- */
+$currentUserStatus = 'active';
+$statusStmt = $conn->prepare("SELECT status FROM Users WHERE user_id = ? LIMIT 1");
+if ($statusStmt) {
+    $statusStmt->bind_param("i", $currentUserId);
+    $statusStmt->execute();
+    $statusResult = $statusStmt->get_result();
+    $statusRow = $statusResult ? $statusResult->fetch_assoc() : null;
+    $currentUserStatus = normalizeUserStatus($statusRow['status'] ?? 'active');
+    $statusStmt->close();
+}
+$isBlocked = in_array($currentUserStatus, ['suspended', 'reported', 'under_review', 'blocked'], true);
 
-    /* Collect owner + active team members */
-    $participantIds = [];
+/* ---------- Auto-open/create DM from matches/profile ---------- */
+if ($selectedConversationId <= 0 && $targetUserId > 0) {
+    if ($targetUserId === $currentUserId) {
+        $errorMessage = "You cannot start a direct message with yourself.";
+    } else {
+        $targetCheck = $conn->prepare("SELECT user_id, status FROM Users WHERE user_id = ? LIMIT 1");
+        if ($targetCheck) {
+            $targetCheck->bind_param("i", $targetUserId);
+            $targetCheck->execute();
+            $targetRow = $targetCheck->get_result()->fetch_assoc();
+            $targetCheck->close();
 
-    $sqlOwner = "
-        SELECT owner_id
-        FROM Projects
-        WHERE project_id = ?
-        LIMIT 1
-    ";
-    $stmtOwner = $conn->prepare($sqlOwner);
-    if ($stmtOwner) {
-        $stmtOwner->bind_param("i", $projectId);
-        $stmtOwner->execute();
-        $resultOwner = $stmtOwner->get_result();
+            if ($targetRow) {
+                $targetStatus = normalizeUserStatus($targetRow['status'] ?? 'active');
 
-        if ($ownerRow = $resultOwner->fetch_assoc()) {
-            $ownerId = (int)$ownerRow['owner_id'];
-            if ($ownerId > 0) {
-                $participantIds[$ownerId] = true;
+                if (in_array($targetStatus, ['suspended', 'reported', 'under_review', 'blocked'], true)) {
+                    $errorMessage = "This user is currently unavailable for messaging.";
+                } else {
+                    $conversationId = getOrCreatePrivateConversation($conn, $currentUserId, $targetUserId);
+
+                    if ($conversationId > 0) {
+                        header("Location: /pages/messages.php?conversation_id=" . $conversationId);
+                        exit();
+                    } else {
+                        $errorMessage = "Could not open a private conversation right now.";
+                    }
+                }
+            } else {
+                $errorMessage = "Selected user was not found.";
             }
         }
-        $stmtOwner->close();
     }
+}
 
-    $sqlProjectMembers = "
-        SELECT user_id
-        FROM TeamMembership
-        WHERE project_id = ? AND status = 'active'
-    ";
-    $stmtProjectMembers = $conn->prepare($sqlProjectMembers);
-    if ($stmtProjectMembers) {
-        $stmtProjectMembers->bind_param("i", $projectId);
-        $stmtProjectMembers->execute();
-        $resultProjectMembers = $stmtProjectMembers->get_result();
+/* ---------- Handle sending ---------- */
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['conversation_id'])) {
+    $postedToken = $_POST['csrf_token'] ?? '';
+    $conversationId = (int)($_POST['conversation_id'] ?? 0);
+    $text = trim((string)($_POST['message'] ?? ''));
 
-        while ($memberRow = $resultProjectMembers->fetch_assoc()) {
-            $memberId = (int)$memberRow['user_id'];
-            if ($memberId > 0) {
-                $participantIds[$memberId] = true;
-            }
-        }
-        $stmtProjectMembers->close();
-    }
+    if (!hash_equals($_SESSION['csrf_token'], $postedToken)) {
+        $errorMessage = "Invalid request token. Please refresh the page and try again.";
+    } elseif ($isBlocked) {
+        $errorMessage = "Your account is under review. You cannot send messages.";
+    } elseif ($conversationId <= 0) {
+        $errorMessage = "Invalid conversation.";
+    } elseif ($text === '') {
+        $errorMessage = "Message cannot be empty.";
+    } else {
+        $text = mb_substr($text, 0, 2000);
 
-    /* Insert missing participants */
-    foreach (array_keys($participantIds) as $participantId) {
-        $sqlCheckParticipant = "
+        $participantStmt = $conn->prepare("
             SELECT 1
             FROM ConversationParticipants
             WHERE conversation_id = ? AND user_id = ?
             LIMIT 1
-        ";
-        $stmtCheckParticipant = $conn->prepare($sqlCheckParticipant);
-        if (!$stmtCheckParticipant) {
-            die("Check participant failed: " . $conn->error);
-        }
+        ");
 
-        $stmtCheckParticipant->bind_param("ii", $conversationId, $participantId);
-        $stmtCheckParticipant->execute();
-        $resultCheckParticipant = $stmtCheckParticipant->get_result();
-        $exists = $resultCheckParticipant->fetch_assoc();
-        $stmtCheckParticipant->close();
+        if ($participantStmt) {
+            $participantStmt->bind_param("ii", $conversationId, $currentUserId);
+            $participantStmt->execute();
+            $isParticipant = $participantStmt->get_result()->num_rows > 0;
+            $participantStmt->close();
 
-        if (!$exists) {
-            $sqlInsertParticipant = "
-                INSERT INTO ConversationParticipants (conversation_id, user_id, joined_at)
-                VALUES (?, ?, NOW())
-            ";
-            $stmtInsertParticipant = $conn->prepare($sqlInsertParticipant);
-            if (!$stmtInsertParticipant) {
-                die("Insert participant failed: " . $conn->error);
+            if ($isParticipant) {
+                $restrictionStmt = $conn->prepare("
+                    SELECT
+                        c.type,
+                        c.project_id,
+                        p.status AS project_status
+                    FROM Conversations c
+                    LEFT JOIN Projects p ON c.project_id = p.project_id
+                    WHERE c.conversation_id = ?
+                    LIMIT 1
+                ");
+
+                $canSend = true;
+
+                if ($restrictionStmt) {
+                    $restrictionStmt->bind_param("i", $conversationId);
+                    $restrictionStmt->execute();
+                    $restrictionRow = $restrictionStmt->get_result()->fetch_assoc();
+                    $restrictionStmt->close();
+
+                    if ($restrictionRow) {
+                        $convType = normalizeConversationType($restrictionRow['type'] ?? 'private');
+                        $projectStatus = strtolower(trim((string)($restrictionRow['project_status'] ?? '')));
+
+                        if (
+                            $convType === 'project' &&
+                            in_array($projectStatus, ['suspended', 'reported', 'under_review', 'blocked'], true)
+                        ) {
+                            $canSend = false;
+                            $errorMessage = "This project conversation is currently restricted.";
+                        }
+                    }
+                }
+
+                if ($canSend) {
+                    $insertStmt = $conn->prepare("
+                        INSERT INTO Messages (conversation_id, sender_id, content, sent_at)
+                        VALUES (?, ?, ?, NOW())
+                    ");
+
+                    if ($insertStmt) {
+                        $insertStmt->bind_param("iis", $conversationId, $currentUserId, $text);
+                        $insertStmt->execute();
+                        $insertStmt->close();
+
+                        header("Location: /pages/messages.php?conversation_id=" . $conversationId . ($searchTerm !== '' ? '&search=' . urlencode($searchTerm) : ''));
+                        exit();
+                    } else {
+                        $errorMessage = "Could not send your message right now.";
+                    }
+                }
+            } else {
+                $errorMessage = "You are not allowed to send messages in this conversation.";
             }
-
-            $stmtInsertParticipant->bind_param("ii", $conversationId, $participantId);
-            $stmtInsertParticipant->execute();
-            $stmtInsertParticipant->close();
-        }
-    }
-}
-
-/*
-|--------------------------------------------------------------------------
-| 1. Auto-create or fetch private conversation
-|--------------------------------------------------------------------------
-*/
-if ($startChatUserId > 0 && $startChatUserId !== $current_user_id) {
-    $checkUserSql = "SELECT user_id FROM Users WHERE user_id = ? LIMIT 1";
-    $checkUserStmt = $conn->prepare($checkUserSql);
-
-    if (!$checkUserStmt) {
-        die("Target user check failed: " . $conn->error);
-    }
-
-    $checkUserStmt->bind_param("i", $startChatUserId);
-    $checkUserStmt->execute();
-    $checkUserResult = $checkUserStmt->get_result();
-    $targetUserExists = $checkUserResult->fetch_assoc();
-    $checkUserStmt->close();
-
-    if ($targetUserExists) {
-        $findPrivateSql = "
-            SELECT DISTINCT c.conversation_id
-            FROM Conversations c
-            INNER JOIN ConversationParticipants cp1
-                ON c.conversation_id = cp1.conversation_id
-            INNER JOIN ConversationParticipants cp2
-                ON c.conversation_id = cp2.conversation_id
-            WHERE c.type = 'private'
-              AND cp1.user_id = ?
-              AND cp2.user_id = ?
-            LIMIT 1
-        ";
-
-        $findPrivateStmt = $conn->prepare($findPrivateSql);
-        if (!$findPrivateStmt) {
-            die("Find private conversation failed: " . $conn->error);
-        }
-
-        $findPrivateStmt->bind_param("ii", $current_user_id, $startChatUserId);
-        $findPrivateStmt->execute();
-        $findPrivateResult = $findPrivateStmt->get_result();
-
-        if ($existingConversation = $findPrivateResult->fetch_assoc()) {
-            $selectedConversationId = (int)$existingConversation['conversation_id'];
         } else {
-            $insertConversationSql = "
-                INSERT INTO Conversations (type, project_id, created_at)
-                VALUES ('private', NULL, NOW())
-            ";
-
-            if (!$conn->query($insertConversationSql)) {
-                die("Create private conversation failed: " . $conn->error);
-            }
-
-            $newConversationId = (int)$conn->insert_id;
-
-            $insertParticipantsSql = "
-                INSERT INTO ConversationParticipants (conversation_id, user_id, joined_at)
-                VALUES (?, ?, NOW()), (?, ?, NOW())
-            ";
-
-            $insertParticipantsStmt = $conn->prepare($insertParticipantsSql);
-            if (!$insertParticipantsStmt) {
-                die("Insert private participants failed: " . $conn->error);
-            }
-
-            $insertParticipantsStmt->bind_param(
-                "iiii",
-                $newConversationId, $current_user_id,
-                $newConversationId, $startChatUserId
-            );
-            $insertParticipantsStmt->execute();
-            $insertParticipantsStmt->close();
-
-            $selectedConversationId = $newConversationId;
+            $errorMessage = "Could not verify conversation access.";
         }
-
-        $findPrivateStmt->close();
-
-        $redirectUrl = "/pages/messages.php?conversation_id=" . $selectedConversationId;
-        if ($searchTerm !== '') {
-            $redirectUrl .= "&search=" . urlencode($searchTerm);
-        }
-
-        header("Location: " . $redirectUrl);
-        exit();
     }
 }
 
-/*
-|--------------------------------------------------------------------------
-| 2. Handle sending message
-|--------------------------------------------------------------------------
-*/
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['message'], $_POST['conversation_id'])) {
-    $messageText = trim($_POST['message']);
-    $conversationId = (int)$_POST['conversation_id'];
-
-    $accessSql = "
-        SELECT 1
-        FROM ConversationParticipants
-        WHERE conversation_id = ? AND user_id = ?
-        LIMIT 1
-    ";
-    $accessStmt = $conn->prepare($accessSql);
-
-    if (!$accessStmt) {
-        die("Conversation access check failed: " . $conn->error);
-    }
-
-    $accessStmt->bind_param("ii", $conversationId, $current_user_id);
-    $accessStmt->execute();
-    $accessResult = $accessStmt->get_result();
-    $allowedToSend = $accessResult->fetch_assoc();
-    $accessStmt->close();
-
-    if ($messageText !== '' && $allowedToSend) {
-        $insertSql = "
-            INSERT INTO Messages (conversation_id, sender_id, content, flagged_phone, sent_at)
-            VALUES (?, ?, ?, 0, NOW())
-        ";
-        $insertStmt = $conn->prepare($insertSql);
-
-        if (!$insertStmt) {
-            die("Insert message prepare failed: " . $conn->error);
-        }
-
-        $insertStmt->bind_param("iis", $conversationId, $current_user_id, $messageText);
-        $insertStmt->execute();
-        $insertStmt->close();
-
-        $redirectUrl = "/pages/messages.php?conversation_id=" . $conversationId;
-        if ($searchTerm !== '') {
-            $redirectUrl .= "&search=" . urlencode($searchTerm);
-        }
-
-        header("Location: " . $redirectUrl);
-        exit();
-    }
-}
-
-/*
-|--------------------------------------------------------------------------
-| 3. Left panel conversations
-|--------------------------------------------------------------------------
-*/
+/* ---------- Load sidebar conversations ---------- */
 $conversations = [];
 
-$sqlConversations = "
+$sql = "
     SELECT
         c.conversation_id,
         c.type,
@@ -403,302 +308,214 @@ $sqlConversations = "
             SELECT MAX(m.sent_at)
             FROM Messages m
             WHERE m.conversation_id = c.conversation_id
-        ) AS last_message_time
+        ) AS last_time,
+        (
+            SELECT u2.email
+            FROM ConversationParticipants cp2
+            JOIN Users u2 ON cp2.user_id = u2.user_id
+            WHERE cp2.conversation_id = c.conversation_id
+              AND cp2.user_id != ?
+            LIMIT 1
+        ) AS other_user_email,
+        (
+            SELECT u2.user_id
+            FROM ConversationParticipants cp2
+            JOIN Users u2 ON cp2.user_id = u2.user_id
+            WHERE cp2.conversation_id = c.conversation_id
+              AND cp2.user_id != ?
+            LIMIT 1
+        ) AS other_user_id
     FROM Conversations c
-    INNER JOIN ConversationParticipants cp
-        ON c.conversation_id = cp.conversation_id
-    LEFT JOIN Projects p
-        ON c.project_id = p.project_id
+    JOIN ConversationParticipants cp ON c.conversation_id = cp.conversation_id
+    LEFT JOIN Projects p ON c.project_id = p.project_id
     WHERE cp.user_id = ?
-    ORDER BY
-        last_message_time DESC,
-        c.created_at DESC
+    ORDER BY last_time DESC, c.created_at DESC
 ";
 
-$stmtConversations = $conn->prepare($sqlConversations);
-if (!$stmtConversations) {
-    die("Conversations query prepare failed: " . $conn->error);
+$stmt = $conn->prepare($sql);
+if ($stmt) {
+    $stmt->bind_param("iii", $currentUserId, $currentUserId, $currentUserId);
+    $stmt->execute();
+    $conversations = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $stmt->close();
 }
 
-$stmtConversations->bind_param("i", $current_user_id);
-$stmtConversations->execute();
-$resultConversations = $stmtConversations->get_result();
-
-while ($row = $resultConversations->fetch_assoc()) {
-    $row['display_title'] = 'Conversation';
-    $row['display_subtitle'] = '';
-    $row['preview'] = 'No messages yet';
-    $row['preview_time'] = '';
-    $row['avatar'] = '';
-
-    if ($row['type'] === 'project') {
-        $row['display_title'] = !empty($row['project_title']) ? $row['project_title'] : 'Project Conversation';
-        $row['display_subtitle'] = 'Project Group';
-    } elseif ($row['type'] === 'private') {
-        $otherSql = "
-            SELECT u.user_id, u.email, u.profile_picture
-            FROM ConversationParticipants cp
-            INNER JOIN Users u ON cp.user_id = u.user_id
-            WHERE cp.conversation_id = ?
-              AND cp.user_id != ?
-            LIMIT 1
-        ";
-        $otherStmt = $conn->prepare($otherSql);
-
-        if ($otherStmt) {
-            $otherStmt->bind_param("ii", $row['conversation_id'], $current_user_id);
-            $otherStmt->execute();
-            $otherResult = $otherStmt->get_result();
-
-            if ($otherUser = $otherResult->fetch_assoc()) {
-                $row['display_title'] = displayUserLabel($otherUser['email']);
-                $row['display_subtitle'] = 'Direct Message';
-                $row['avatar'] = buildProfilePictureUrl($otherUser['profile_picture']);
-            } else {
-                $row['display_title'] = 'Direct Message';
-                $row['display_subtitle'] = 'Private Chat';
-            }
-
-            $otherStmt->close();
-        }
-    }
-
-    $previewSql = "
-        SELECT m.content, m.sent_at, m.sender_id
-        FROM Messages m
-        WHERE m.conversation_id = ?
-        ORDER BY m.sent_at DESC
-        LIMIT 1
-    ";
-    $previewStmt = $conn->prepare($previewSql);
-
-    if ($previewStmt) {
-        $previewStmt->bind_param("i", $row['conversation_id']);
-        $previewStmt->execute();
-        $previewResult = $previewStmt->get_result();
-
-        if ($previewRow = $previewResult->fetch_assoc()) {
-            $prefix = ((int)$previewRow['sender_id'] === $current_user_id) ? 'You: ' : '';
-            $row['preview'] = $prefix . $previewRow['content'];
-            $row['preview_time'] = $previewRow['sent_at'];
-        }
-
-        $previewStmt->close();
-    }
-
-    $conversations[] = $row;
-}
-
-$stmtConversations->close();
-
-/*
-|--------------------------------------------------------------------------
-| 4. Search filter
-|--------------------------------------------------------------------------
-*/
+/* ---------- Filter sidebar conversations by project or username ---------- */
 if ($searchTerm !== '') {
-    $filtered = [];
     $needle = mb_strtolower($searchTerm);
 
-    foreach ($conversations as $conversation) {
-        $haystack1 = mb_strtolower($conversation['display_title']);
-        $haystack2 = mb_strtolower($conversation['display_subtitle']);
-        $haystack3 = mb_strtolower($conversation['preview']);
+    $conversations = array_filter($conversations, function ($conv) use ($needle) {
+        $convType = normalizeConversationType($conv['type'] ?? 'private');
 
-        if (
-            mb_strpos($haystack1, $needle) !== false ||
-            mb_strpos($haystack2, $needle) !== false ||
-            mb_strpos($haystack3, $needle) !== false
-        ) {
-            $filtered[] = $conversation;
-        }
-    }
+        $title = $convType === 'project'
+            ? mb_strtolower((string)($conv['project_title'] ?? ''))
+            : mb_strtolower(displayUserLabel($conv['other_user_email'] ?? ''));
 
-    $conversations = $filtered;
+        return mb_strpos($title, $needle) !== false;
+    });
 }
 
-/*
-|--------------------------------------------------------------------------
-| 5. Selected conversation
-|--------------------------------------------------------------------------
-*/
+/* ---------- Load selected conversation ---------- */
 $messages = [];
-$selectedConversationTitle = "Select a conversation";
-$selectedConversationSubTitle = "Choose a conversation from the left panel";
-$selectedProjectId = null;
+$title = "Select a conversation";
+$subtitle = "Choose a conversation from the left panel";
+$type = null;
+$info = null;
+$hasAccess = false;
+$canSendInConversation = false;
+$dmOtherUserId = 0;
+$projectApplicationsUrl = null;
 
 if ($selectedConversationId > 0) {
-    $membershipSql = "
+    $chk = $conn->prepare("
         SELECT 1
         FROM ConversationParticipants
         WHERE conversation_id = ? AND user_id = ?
         LIMIT 1
-    ";
-    $membershipStmt = $conn->prepare($membershipSql);
+    ");
 
-    if (!$membershipStmt) {
-        die("Membership check failed: " . $conn->error);
+    if ($chk) {
+        $chk->bind_param("ii", $selectedConversationId, $currentUserId);
+        $chk->execute();
+        $hasAccess = $chk->get_result()->num_rows > 0;
+        $chk->close();
     }
 
-    $membershipStmt->bind_param("ii", $selectedConversationId, $current_user_id);
-    $membershipStmt->execute();
-    $membershipResult = $membershipStmt->get_result();
-    $hasAccess = $membershipResult->fetch_assoc();
-    $membershipStmt->close();
-
     if ($hasAccess) {
-        $conversationSql = "
+        $head = $conn->prepare("
             SELECT
-                c.conversation_id,
                 c.type,
                 c.project_id,
-                p.title AS project_title
+                p.title AS project_title,
+                p.status AS project_status,
+                p.owner_id
             FROM Conversations c
             LEFT JOIN Projects p ON c.project_id = p.project_id
             WHERE c.conversation_id = ?
             LIMIT 1
-        ";
+        ");
 
-        $conversationStmt = $conn->prepare($conversationSql);
-        if (!$conversationStmt) {
-            die("Conversation header query failed: " . $conn->error);
+        if ($head) {
+            $head->bind_param("i", $selectedConversationId);
+            $head->execute();
+            $info = $head->get_result()->fetch_assoc();
+            $head->close();
         }
 
-        $conversationStmt->bind_param("i", $selectedConversationId);
-        $conversationStmt->execute();
-        $conversationResult = $conversationStmt->get_result();
+        if ($info) {
+            $type = normalizeConversationType($info['type'] ?? 'private');
 
-        if ($selectedConversation = $conversationResult->fetch_assoc()) {
-            $selectedProjectId = $selectedConversation['project_id'];
+            if ($type === 'project') {
+                $title = $info['project_title'] ?: 'Project Conversation';
+                $subtitle = 'Project Group';
 
-            if ($selectedConversation['type'] === 'project') {
-                $selectedConversationTitle = !empty($selectedConversation['project_title'])
-                    ? $selectedConversation['project_title']
-                    : 'Project Conversation';
-                $selectedConversationSubTitle = 'Project Group';
-            } elseif ($selectedConversation['type'] === 'private') {
-                $otherHeaderSql = "
-                    SELECT u.email
+                $projectStatus = strtolower(trim((string)($info['project_status'] ?? '')));
+                if (in_array($projectStatus, ['suspended', 'reported', 'under_review', 'blocked'], true)) {
+                    $infoMessage = "This project conversation is currently restricted.";
+                    $canSendInConversation = false;
+                } else {
+                    $canSendInConversation = !$isBlocked;
+                }
+
+                if (pageExists('applications.php') && !empty($info['project_id'])) {
+                    $projectApplicationsUrl = '/pages/applications.php?project_id=' . (int)$info['project_id'];
+                }
+            } else {
+                $usr = $conn->prepare("
+                    SELECT u.user_id, u.email, u.status
                     FROM ConversationParticipants cp
-                    INNER JOIN Users u ON cp.user_id = u.user_id
-                    WHERE cp.conversation_id = ?
-                      AND cp.user_id != ?
+                    JOIN Users u ON cp.user_id = u.user_id
+                    WHERE cp.conversation_id = ? AND cp.user_id != ?
                     LIMIT 1
-                ";
-                $otherHeaderStmt = $conn->prepare($otherHeaderSql);
+                ");
 
-                if ($otherHeaderStmt) {
-                    $otherHeaderStmt->bind_param("ii", $selectedConversationId, $current_user_id);
-                    $otherHeaderStmt->execute();
-                    $otherHeaderResult = $otherHeaderStmt->get_result();
+                if ($usr) {
+                    $usr->bind_param("ii", $selectedConversationId, $currentUserId);
+                    $usr->execute();
+                    $u = $usr->get_result()->fetch_assoc();
+                    $usr->close();
 
-                    if ($otherHeaderUser = $otherHeaderResult->fetch_assoc()) {
-                        $selectedConversationTitle = displayUserLabel($otherHeaderUser['email']);
-                        $selectedConversationSubTitle = 'Direct Message';
-                    } else {
-                        $selectedConversationTitle = 'Direct Message';
-                        $selectedConversationSubTitle = 'Private Chat';
+                    if ($u) {
+                        $dmOtherUserId = (int)$u['user_id'];
+                        $title = displayUserLabel($u['email']);
+                        $subtitle = 'Direct Message';
+
+                        $otherStatus = normalizeUserStatus($u['status'] ?? 'active');
+                        if (in_array($otherStatus, ['suspended', 'reported', 'under_review', 'blocked'], true)) {
+                            $infoMessage = "This user is currently restricted.";
+                            $canSendInConversation = false;
+                        } else {
+                            $canSendInConversation = !$isBlocked;
+                        }
                     }
-
-                    $otherHeaderStmt->close();
                 }
             }
         }
 
-        $conversationStmt->close();
-
-        $sqlMessages = "
+        $ms = $conn->prepare("
             SELECT
-                m.message_id,
-                m.conversation_id,
                 m.sender_id,
                 m.content,
                 m.sent_at,
-                u.email AS sender_email,
+                u.email,
                 u.profile_picture
             FROM Messages m
-            INNER JOIN Users u ON m.sender_id = u.user_id
+            JOIN Users u ON m.sender_id = u.user_id
             WHERE m.conversation_id = ?
             ORDER BY m.sent_at ASC
-        ";
+        ");
 
-        $stmtMessages = $conn->prepare($sqlMessages);
-        if (!$stmtMessages) {
-            die("Messages query prepare failed: " . $conn->error);
+        if ($ms) {
+            $ms->bind_param("i", $selectedConversationId);
+            $ms->execute();
+            $messages = $ms->get_result()->fetch_all(MYSQLI_ASSOC);
+            $ms->close();
         }
-
-        $stmtMessages->bind_param("i", $selectedConversationId);
-        $stmtMessages->execute();
-        $resultMessages = $stmtMessages->get_result();
-
-        while ($row = $resultMessages->fetch_assoc()) {
-            $messages[] = $row;
-        }
-
-        $stmtMessages->close();
     } else {
-        $selectedConversationId = 0;
+        $errorMessage = "You do not have access to this conversation.";
     }
 }
 ?>
 
 <div class="messages-layout">
-
     <div class="chat-list-panel">
-        <form class="search-box mb-3" method="GET" action="/pages/messages.php">
+        <form class="search-box" method="GET" action="/pages/messages.php">
             <?php if ($selectedConversationId > 0): ?>
                 <input type="hidden" name="conversation_id" value="<?php echo (int)$selectedConversationId; ?>">
             <?php endif; ?>
-
             <input
                 type="text"
                 name="search"
-                placeholder="Search messages..."
+                placeholder="Search by project or username..."
                 value="<?php echo safeText($searchTerm); ?>"
             >
         </form>
 
         <div class="section-label">Conversations</div>
 
-        <?php if (!empty($conversations)): ?>
-            <?php foreach ($conversations as $conversation): ?>
-                <a href="/pages/messages.php?conversation_id=<?php echo (int)$conversation['conversation_id']; ?><?php echo ($searchTerm !== '') ? '&search=' . urlencode($searchTerm) : ''; ?>"
-                   class="chat-item <?php echo ($selectedConversationId == $conversation['conversation_id']) ? 'active-chat' : ''; ?>">
-
-                    <div class="chat-avatar">
-                        <?php if (!empty($conversation['avatar'])): ?>
-                            <img src="<?php echo safeText($conversation['avatar']); ?>" alt="Avatar" class="avatar-img" onerror="this.style.display='none'; this.parentElement.querySelector('.fallback-avatar').style.display='block';">
-                            <svg class="fallback-avatar" style="display:none;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="#2f3a1c" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="12" cy="7" r="4"></circle>
-                                <path d="M5 20c0-4 4-6 7-6s7 2 7 6"></path>
-                            </svg>
-                        <?php else: ?>
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="#2f3a1c" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="12" cy="7" r="4"></circle>
-                                <path d="M5 20c0-4 4-6 7-6s7 2 7 6"></path>
-                            </svg>
-                        <?php endif; ?>
-                    </div>
-
+        <?php if ($conversations): ?>
+            <?php foreach ($conversations as $c): ?>
+                <?php
+                $convType = normalizeConversationType($c['type'] ?? 'private');
+                $displayName = $convType === 'project'
+                    ? ($c['project_title'] ?: 'Project')
+                    : displayUserLabel($c['other_user_email'] ?? '');
+                ?>
+                <a href="/pages/messages.php?conversation_id=<?php echo (int)$c['conversation_id']; ?><?php echo ($searchTerm !== '' ? '&search=' . urlencode($searchTerm) : ''); ?>"
+                   class="chat-item <?php echo ($selectedConversationId == $c['conversation_id']) ? 'active-chat' : ''; ?>">
                     <div class="chat-item-content">
-                        <div class="chat-name"><?php echo safeText($conversation['display_title']); ?></div>
-
-                        <?php if ($conversation['display_subtitle'] !== ''): ?>
-                            <div class="chat-subname"><?php echo safeText($conversation['display_subtitle']); ?></div>
-                        <?php endif; ?>
-
-                        <div class="chat-preview"><?php echo safeText(shortPreview($conversation['preview'])); ?></div>
-
-                        <?php if (!empty($conversation['preview_time'])): ?>
-                            <div class="chat-time"><?php echo safeText($conversation['preview_time']); ?></div>
-                        <?php endif; ?>
+                        <div class="chat-name"><?php echo safeText($displayName); ?></div>
+                        <div class="chat-preview">
+                            <?php echo safeText($c['last_time'] ? formatTime($c['last_time']) : 'No messages yet'); ?>
+                        </div>
                     </div>
                 </a>
             <?php endforeach; ?>
         <?php else: ?>
             <div class="empty-panel-card">
-                <h6>No conversations yet.</h6>
-                <p>Start a chat from matches, project details, or another user profile.</p>
+                <p>
+                    <?php echo $searchTerm !== '' ? 'No matches for "' . safeText($searchTerm) . '"' : 'No conversations found.'; ?>
+                </p>
             </div>
         <?php endif; ?>
     </div>
@@ -706,76 +523,75 @@ if ($selectedConversationId > 0) {
     <div class="chat-panel">
         <div class="chat-header">
             <div class="chat-header-left">
-                <h2><?php echo safeText($selectedConversationTitle); ?></h2>
-                <p class="chat-subtitle"><?php echo safeText($selectedConversationSubTitle); ?></p>
+                <h2><?php echo safeText($title); ?></h2>
+                <p class="chat-subtitle"><?php echo safeText($subtitle); ?></p>
             </div>
 
-            <div class="chat-header-actions">
-                <?php if (!empty($selectedProjectId)): ?>
-                    <a href="/pages/project_details.php?project_id=<?php echo (int)$selectedProjectId; ?>" class="btn-outline-olive">View Project</a>
-                <?php endif; ?>
+            <?php if ($type === 'project' && isset($info['project_id']) && (int)$info['project_id'] > 0): ?>
+                <div class="chat-header-actions">
+                    <a href="/pages/project_details.php?project_id=<?php echo (int)$info['project_id']; ?>" class="btn-outline-olive">View Project</a>
 
-                <?php if ($selectedConversationId > 0): ?>
+                    <?php if ($projectApplicationsUrl !== null): ?>
+                        <a href="<?php echo safeText($projectApplicationsUrl); ?>" class="btn-outline-olive">Applications</a>
+                    <?php endif; ?>
+
+                    <a href="/pages/report.php?project_id=<?php echo (int)$info['project_id']; ?>" class="btn-outline-olive">Report</a>
+                </div>
+            <?php elseif ($selectedConversationId > 0 && $hasAccess): ?>
+                <div class="chat-header-actions">
+                    <?php if ($dmOtherUserId > 0 && pageExists('matches.php')): ?>
+                        <a href="/pages/matches.php?user_id=<?php echo $dmOtherUserId; ?>" class="btn-outline-olive">View Match</a>
+                    <?php endif; ?>
+
                     <a href="/pages/report.php?conversation_id=<?php echo (int)$selectedConversationId; ?>" class="btn-outline-olive">Report</a>
-                <?php endif; ?>
-            </div>
+                </div>
+            <?php endif; ?>
         </div>
 
+        <?php if ($errorMessage !== ''): ?>
+            <div class="alert alert-danger"><?php echo safeText($errorMessage); ?></div>
+        <?php endif; ?>
+
+        <?php if ($infoMessage !== ''): ?>
+            <div class="alert alert-warning"><?php echo safeText($infoMessage); ?></div>
+        <?php endif; ?>
+
         <div class="chat-box">
-            <div class="message-thread">
-                <?php if (!empty($messages)): ?>
+            <div class="message-thread" id="messageThread">
+                <?php if ($messages): ?>
                     <?php foreach ($messages as $msg): ?>
-                        <?php $msgAvatarUrl = buildProfilePictureUrl($msg['profile_picture']); ?>
+                        <?php $mine = (int)$msg['sender_id'] === $currentUserId; ?>
+                        <div class="message-row <?php echo $mine ? 'message-right' : 'message-left'; ?>">
+                            <?php if (!$mine): ?>
+                                <div class="avatar-name"><?php echo safeText(displayUserLabel($msg['email'])); ?></div>
+                            <?php endif; ?>
 
-                        <?php if ((int)$msg['sender_id'] === $current_user_id): ?>
-                            <div class="message-row message-right">
-                                <div class="message-content-wrap">
-                                    <div class="message-bubble my-message"><?php echo safeText($msg['content']); ?></div>
-                                    <div class="message-meta">You · <?php echo safeText($msg['sent_at']); ?></div>
-                                </div>
+                            <div class="message-bubble-wrap">
+                                <div class="message-bubble"><?php echo nl2br(safeText($msg['content'])); ?></div>
+                                <div class="message-meta"><?php echo safeText(formatTime($msg['sent_at'])); ?></div>
                             </div>
-                        <?php else: ?>
-                            <div class="message-row">
-                                <div class="message-left-wrap">
-                                    <div class="chat-avatar">
-                                        <?php if (!empty($msgAvatarUrl)): ?>
-                                            <img src="<?php echo safeText($msgAvatarUrl); ?>" alt="Avatar" class="avatar-img" onerror="this.style.display='none'; this.parentElement.querySelector('.fallback-avatar').style.display='block';">
-                                            <svg class="fallback-avatar" style="display:none;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="#2f3a1c" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                <circle cx="12" cy="7" r="4"></circle>
-                                                <path d="M5 20c0-4 4-6 7-6s7 2 7 6"></path>
-                                            </svg>
-                                        <?php else: ?>
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="#2f3a1c" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                <circle cx="12" cy="7" r="4"></circle>
-                                                <path d="M5 20c0-4 4-6 7-6s7 2 7 6"></path>
-                                            </svg>
-                                        <?php endif; ?>
-                                    </div>
-
-                                    <div class="message-content-wrap">
-                                        <div class="message-bubble"><?php echo safeText($msg['content']); ?></div>
-                                        <div class="message-meta">
-                                            <?php echo safeText(displayUserLabel($msg['sender_email'])); ?> · <?php echo safeText($msg['sent_at']); ?>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        <?php endif; ?>
+                        </div>
                     <?php endforeach; ?>
+                <?php elseif ($selectedConversationId > 0 && $hasAccess): ?>
+                    <div class="empty-chat-card"><p>No messages yet. Say hi!</p></div>
                 <?php else: ?>
-                    <div class="empty-chat-card">
-                        <h6>No messages yet.</h6>
-                        <p>Select a conversation from the left panel or start a new one.</p>
-                    </div>
+                    <div class="empty-chat-card"><p>Select a conversation to start chatting.</p></div>
                 <?php endif; ?>
             </div>
 
-            <?php if ($selectedConversationId > 0): ?>
-                <form class="message-input-wrap" method="POST" action="">
-                    <input type="hidden" name="conversation_id" value="<?php echo (int)$selectedConversationId; ?>">
-                    <input type="text" name="message" placeholder="Type a message..." required>
-                    <button type="submit" class="btn-olive">Send</button>
-                </form>
+            <?php if ($selectedConversationId > 0 && $hasAccess): ?>
+                <?php if ($isBlocked): ?>
+                    <div class="alert alert-danger">Your account is under review. You cannot send messages.</div>
+                <?php elseif (!$canSendInConversation): ?>
+                    <div class="alert alert-warning">You cannot send messages in this conversation right now.</div>
+                <?php else: ?>
+                    <form class="message-input-wrap" method="POST">
+                        <input type="hidden" name="csrf_token" value="<?php echo safeText($csrfToken); ?>">
+                        <input type="hidden" name="conversation_id" value="<?php echo (int)$selectedConversationId; ?>">
+                        <input type="text" name="message" placeholder="Type a message..." maxlength="2000" required>
+                        <button type="submit" class="btn-olive">Send</button>
+                    </form>
+                <?php endif; ?>
             <?php endif; ?>
         </div>
     </div>
