@@ -458,3 +458,65 @@ body {
 .tag-remove:hover {
   color: #b71c1c;
 }
+
+/* Incomplete profile banner */
+.profile-incomplete-banner {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(0);
+  z-index: 1050;
+  width: min(680px, 92vw);
+  animation: bannerSlideUp 0.45s cubic-bezier(.22,.68,0,1.2) forwards;
+}
+
+.profile-incomplete-banner.banner-dismissed {
+  animation: bannerSlideDown 0.35s ease forwards;
+  pointer-events: none;
+}
+
+@keyframes bannerSlideUp {
+  from { transform: translateX(-50%) translateY(120%); opacity: 0; }
+  to   { transform: translateX(-50%) translateY(0);    opacity: 1; }
+}
+
+@keyframes bannerSlideDown {
+  from { transform: translateX(-50%) translateY(0);    opacity: 1; }
+  to   { transform: translateX(-50%) translateY(120%); opacity: 0; }
+}
+
+.profile-banner-inner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #57673E;
+  color: #FCF9F2;
+  border-radius: 14px;
+  padding: 14px 18px;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.18);
+}
+
+.profile-banner-icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.profile-banner-text {
+  flex: 1;
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+.profile-banner-close {
+  background: none;
+  border: none;
+  color: #FCF9F2;
+  font-size: 1rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  opacity: 0.75;
+  padding: 0 4px;
+}
+
+.profile-banner-close:hover { opacity: 1; }
+}

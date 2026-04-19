@@ -87,6 +87,9 @@ if (!empty($_COOKIE['first_login']) && isset($_SESSION['user_id'])) {
         <a class="nav-link" href="/pages/matches.php">Matches</a>
     </li>
     <li class="nav-item">
+        <a class="nav-link" href="/pages/report.php">Report</a>
+    </li>
+    <li class="nav-item">
         <a class="nav-link" href="/pages/settings.php">Settings</a>
     </li>
     <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>

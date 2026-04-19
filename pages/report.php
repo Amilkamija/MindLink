@@ -8,6 +8,23 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $current_user_id = (int)$_SESSION['user_id'];
+
+$stmt = $conn->prepare("SELECT status, role FROM Users WHERE user_id = ?");
+$stmt->bind_param("i", $current_user_id);
+$stmt->execute();
+$current_user_row = $stmt->get_result()->fetch_assoc();
+$stmt->close();
+
+if (!$current_user_row) {
+    session_unset();
+    session_destroy();
+    header("Location: /pages/login.php");
+    exit();
+}
+
+$is_suspended = ($current_user_row['status'] === 'suspended');
+$is_admin = ($current_user_row['role'] === 'admin');
+
 $prefill_project_id = isset($_GET['project_id']) ? (int)$_GET['project_id'] : 0;
 $prefill_user_id = isset($_GET['user_id']) ? (int)$_GET['user_id'] : 0;
 $conversation_id = isset($_GET['conversation_id']) ? (int)$_GET['conversation_id'] : 0;
@@ -49,15 +66,20 @@ if ($conversation_id > 0 && $prefill_user_id === 0) {
 
 $default_tab = $prefill_project_id > 0 ? 'project' : 'user';
 
-$stmt = $conn->prepare("
-    SELECT DISTINCT u.user_id, u.email
-    FROM Users u
-    JOIN TeamMembership tm_other ON tm_other.user_id = u.user_id
-    JOIN TeamMembership tm_me ON tm_me.project_id = tm_other.project_id AND tm_me.user_id = ?
-    WHERE u.user_id != ? AND u.role != 'admin'
-    ORDER BY u.email
-");
-$stmt->bind_param("ii", $current_user_id, $current_user_id);
+if ($is_admin) {
+    $stmt = $conn->prepare("SELECT user_id, email FROM Users WHERE user_id != ? ORDER BY email");
+    $stmt->bind_param("i", $current_user_id);
+} else {
+    $stmt = $conn->prepare("
+        SELECT DISTINCT u.user_id, u.email
+        FROM Users u
+        LEFT JOIN TeamMembership tm_other ON tm_other.user_id = u.user_id
+        LEFT JOIN TeamMembership tm_me ON tm_me.project_id = tm_other.project_id AND tm_me.user_id = ?
+        WHERE u.user_id != ? AND (u.role = 'admin' OR tm_me.user_id IS NOT NULL)
+        ORDER BY u.email
+    ");
+    $stmt->bind_param("ii", $current_user_id, $current_user_id);
+}
 $stmt->execute();
 $all_users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
@@ -66,7 +88,7 @@ $stmt->close();
 $all_projects = $conn->query("SELECT project_id, title FROM Projects ORDER BY title")->fetch_all(MYSQLI_ASSOC);
 
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_suspended) {
     $report_type = $_POST['report_type'] ?? '';
     $reported_user_id = isset($_POST['reported_user_id']) ? (int)$_POST['reported_user_id'] : 0;
     $reported_proj_id = isset($_POST['reported_project_id']) ? (int)$_POST['reported_project_id'] : 0;
@@ -82,20 +104,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif ($reported_user_id === $current_user_id) {
             $error = "You cannot report yourself.";
         } else {
-            // Verify the reported user is actually a teammate
-            $stmt = $conn->prepare("
-                SELECT 1 FROM TeamMembership tm_other
-                JOIN TeamMembership tm_me ON tm_me.project_id = tm_other.project_id AND tm_me.user_id = ?
-                WHERE tm_other.user_id = ?
-                LIMIT 1
-            ");
-            $stmt->bind_param("ii", $current_user_id, $reported_user_id);
-            $stmt->execute();
-            $stmt->store_result();
-            $is_teammate = $stmt->num_rows > 0;
-            $stmt->close();
+            $allowed = false;
+            if ($is_admin) {
+                $allowed = true;
+            } else {
+                // Allow if reported user is admin
+                $stmt = $conn->prepare("SELECT 1 FROM Users WHERE user_id = ? AND role = 'admin' LIMIT 1");
+                $stmt->bind_param("i", $reported_user_id);
+                $stmt->execute();
+                $stmt->store_result();
+                $allowed = $stmt->num_rows > 0;
+                $stmt->close();
 
-            if (!$is_teammate) {
+                if (!$allowed) {
+                    // Otherwise must be a teammate
+                    $stmt = $conn->prepare("
+                        SELECT 1 FROM TeamMembership tm_other
+                        JOIN TeamMembership tm_me ON tm_me.project_id = tm_other.project_id AND tm_me.user_id = ?
+                        WHERE tm_other.user_id = ?
+                        LIMIT 1
+                    ");
+                    $stmt->bind_param("ii", $current_user_id, $reported_user_id);
+                    $stmt->execute();
+                    $stmt->store_result();
+                    $allowed = $stmt->num_rows > 0;
+                    $stmt->close();
+                }
+            }
+
+            if (!$allowed) {
                 $error = "You can only report users who are in a project with you.";
             } else {
                 $stmt = $conn->prepare("INSERT INTO Reports (reporter_id, reported_user_id, reason, status) VALUES (?, ?, ?, 'open')");
@@ -132,6 +169,10 @@ require_once __DIR__ . '/../includes/header2.php';
 
         <div class="section-pill report-pill">Report</div>
 
+        <?php if ($is_suspended): ?>
+          <p class="report-error">Your account is suspended. You cannot submit a report.</p>
+        <?php endif; ?>
+
         <?php if ($success): ?>
           <div class="report-success">
             <p><?= htmlspecialchars($success) ?></p>
@@ -144,7 +185,7 @@ require_once __DIR__ . '/../includes/header2.php';
             <p class="report-error"><?= htmlspecialchars($error) ?></p>
           <?php endif; ?>
 
-          <form method="POST" action="" class="report-form">
+          <form method="POST" action="" class="report-form" <?= $is_suspended ? 'style="pointer-events:none;opacity:0.5;"' : '' ?>>
 
             <label class="report-label">What are you reporting?</label>
             <div class="report-type-toggle">
