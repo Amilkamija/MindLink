@@ -35,11 +35,7 @@ function formatDateTime($value) {
     return date('d M Y, H:i', $timestamp);
 }
 
-/*
-|--------------------------------------------------------------------------
-| 1. Handle actions: accept / reject / cancel
-|--------------------------------------------------------------------------
-*/
+/* 1. Handle actions: accept / reject / cancel */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'], $_POST['application_id'])) {
     $action = trim($_POST['action']);
     $application_id = (int) $_POST['application_id'];
@@ -58,170 +54,161 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'], $_POST['app
             WHERE a.application_id = ?
             LIMIT 1
         ";
+
         $verifyStmt = $conn->prepare($verifySql);
-
         if (!$verifyStmt) {
-            die("Verify prepare failed: " . $conn->error);
-        }
-
-        $verifyStmt->bind_param("i", $application_id);
-        $verifyStmt->execute();
-        $verifyResult = $verifyStmt->get_result();
-        $applicationRow = $verifyResult->fetch_assoc();
-        $verifyStmt->close();
-
-        if (!$applicationRow) {
-            $error = "Application not found.";
+            $error = "Database preparation error. Please try again later.";
         } else {
-            $isProjectOwner = ((int) $applicationRow['owner_id'] === $current_user_id);
-            $isApplicant = ((int) $applicationRow['applicant_id'] === $current_user_id);
+            $verifyStmt->bind_param("i", $application_id);
+            $verifyStmt->execute();
+            $verifyResult = $verifyStmt->get_result();
+            $applicationRow = $verifyResult->fetch_assoc();
+            $verifyStmt->close();
 
-            if ($action === 'accept' && $isProjectOwner) {
-                $conn->begin_transaction();
+            if (!$applicationRow) {
+                $error = "Application not found.";
+            } else {
+                $isProjectOwner = ((int) $applicationRow['owner_id'] === $current_user_id);
+                $isApplicant = ((int) $applicationRow['applicant_id'] === $current_user_id);
 
-                try {
-                    $updateSql = "
-                        UPDATE Applications
-                        SET status = 'accepted', reviewed_at = NOW()
-                        WHERE application_id = ?
-                    ";
-                    $updateStmt = $conn->prepare($updateSql);
+                /* Accept Application */
+                if ($action === 'accept' && $isProjectOwner) {
+                    $conn->begin_transaction();
+                    try {
+                        $updateSql = "
+                            UPDATE Applications
+                            SET status = 'accepted', reviewed_at = NOW()
+                            WHERE application_id = ?
+                        ";
+                        $updateStmt = $conn->prepare($updateSql);
+                        if (!$updateStmt) {
+                            throw new Exception("Failed to prepare accept update.");
+                        }
+                        $updateStmt->bind_param("i", $application_id);
+                        $updateStmt->execute();
+                        $updateStmt->close();
 
-                    if (!$updateStmt) {
-                        throw new Exception("Accept update prepare failed.");
+                        // Reject others for same role
+                        if (!empty($applicationRow['role_id'])) {
+                            $rejectOthersSql = "
+                                UPDATE Applications
+                                SET status = 'rejected', reviewed_at = NOW()
+                                WHERE role_id = ? 
+                                  AND application_id != ? 
+                                  AND status = 'pending'
+                            ";
+                            $rejectOthersStmt = $conn->prepare($rejectOthersSql);
+                            if ($rejectOthersStmt) {
+                                $rejectOthersStmt->bind_param("ii", $applicationRow['role_id'], $application_id);
+                                $rejectOthersStmt->execute();
+                                $rejectOthersStmt->close();
+                            }
+                        }
+
+                        // Add to team if not already in
+                        $checkMembershipSql = "
+                            SELECT membership_id FROM TeamMembership
+                            WHERE project_id = ? AND user_id = ? LIMIT 1
+                        ";
+                        $checkMembershipStmt = $conn->prepare($checkMembershipSql);
+                        if (!$checkMembershipStmt) {
+                            throw new Exception("Membership check preparation failed.");
+                        }
+                        $checkMembershipStmt->bind_param("ii", $applicationRow['project_id'], $applicationRow['applicant_id']);
+                        $checkMembershipStmt->execute();
+                        $membershipExists = $checkMembershipStmt->get_result()->fetch_assoc();
+                        $checkMembershipStmt->close();
+
+                        if (!$membershipExists) {
+                            $insertMembershipSql = "
+                                INSERT INTO TeamMembership (project_id, user_id, role_id, status, joined_at)
+                                VALUES (?, ?, ?, 'active', NOW())
+                            ";
+                            $insertMembershipStmt = $conn->prepare($insertMembershipSql);
+                            if (!$insertMembershipStmt) {
+                                throw new Exception("Failed to prepare membership insert.");
+                            }
+                            $insertMembershipStmt->bind_param("iii", $applicationRow['project_id'], $applicationRow['applicant_id'], $applicationRow['role_id']);
+                            $insertMembershipStmt->execute();
+                            $insertMembershipStmt->close();
+                        }
+
+                        // Mark role filled
+                        if (!empty($applicationRow['role_id'])) {
+                            $updateRoleSql = "UPDATE Roles SET filled = 1 WHERE role_id = ?";
+                            $updateRoleStmt = $conn->prepare($updateRoleSql);
+                            if ($updateRoleStmt) {
+                                $updateRoleStmt->bind_param("i", $applicationRow['role_id']);
+                                $updateRoleStmt->execute();
+                                $updateRoleStmt->close();
+                            }
+                        }
+
+                        $conn->commit();
+                        $success = "Application accepted successfully.";
+                    } catch (Exception $e) {
+                        $conn->rollback();
+                        $error = "An error occurred during acceptance: " . safeText($e->getMessage());
                     }
 
-                    $updateStmt->bind_param("i", $application_id);
-                    $updateStmt->execute();
-                    $updateStmt->close();
-
-                    if (!empty($applicationRow['role_id'])) {
-                        $rejectOthersSql = "
+                /* Reject Applications */
+                } elseif ($action === 'reject' && $isProjectOwner) {
+                    $conn->begin_transaction();
+                    try {
+                        $rejectSql = "
                             UPDATE Applications
                             SET status = 'rejected', reviewed_at = NOW()
-                            WHERE role_id = ?
-                              AND application_id != ?
-                              AND status = 'pending'
+                            WHERE application_id = ?
                         ";
-                        $rejectOthersStmt = $conn->prepare($rejectOthersSql);
-
-                        if ($rejectOthersStmt) {
-                            $rejectOthersStmt->bind_param("ii", $applicationRow['role_id'], $application_id);
-                            $rejectOthersStmt->execute();
-                            $rejectOthersStmt->close();
+                        $rejectStmt = $conn->prepare($rejectSql);
+                        if (!$rejectStmt) {
+                            throw new Exception("Failed to prepare reject SQL.");
                         }
+                        $rejectStmt->bind_param("i", $application_id);
+                        $rejectStmt->execute();
+                        $rejectStmt->close();
+
+                        $conn->commit();
+                        $success = "Application rejected.";
+                    } catch (Exception $e) {
+                        $conn->rollback();
+                        $error = "Could not reject application. " . safeText($e->getMessage());
                     }
 
-                    $checkMembershipSql = "
-                        SELECT membership_id
-                        FROM TeamMembership
-                        WHERE project_id = ? AND user_id = ?
-                        LIMIT 1
-                    ";
-                    $checkMembershipStmt = $conn->prepare($checkMembershipSql);
-
-                    if (!$checkMembershipStmt) {
-                        throw new Exception("Membership check prepare failed.");
-                    }
-
-                    $checkMembershipStmt->bind_param("ii", $applicationRow['project_id'], $applicationRow['applicant_id']);
-                    $checkMembershipStmt->execute();
-                    $checkMembershipResult = $checkMembershipStmt->get_result();
-                    $membershipExists = $checkMembershipResult->fetch_assoc();
-                    $checkMembershipStmt->close();
-
-                    if (!$membershipExists) {
-                        $insertMembershipSql = "
-                            INSERT INTO TeamMembership (project_id, user_id, role_id, status, joined_at)
-                            VALUES (?, ?, ?, 'active', NOW())
+                /* Cancel Application */
+                } elseif ($action === 'cancel' && $isApplicant) {
+                    $conn->begin_transaction();
+                    try {
+                        $cancelSql = "
+                            UPDATE Applications
+                            SET status = 'cancelled'
+                            WHERE application_id = ? AND applicant_id = ? AND status = 'pending'
                         ";
-                        $insertMembershipStmt = $conn->prepare($insertMembershipSql);
-
-                        if (!$insertMembershipStmt) {
-                            throw new Exception("Membership insert prepare failed.");
+                        $cancelStmt = $conn->prepare($cancelSql);
+                        if (!$cancelStmt) {
+                            throw new Exception("Failed to prepare cancel SQL.");
                         }
+                        $cancelStmt->bind_param("ii", $application_id, $current_user_id);
+                        $cancelStmt->execute();
+                        $cancelStmt->close();
 
-                        $insertMembershipStmt->bind_param(
-                            "iii",
-                            $applicationRow['project_id'],
-                            $applicationRow['applicant_id'],
-                            $applicationRow['role_id']
-                        );
-                        $insertMembershipStmt->execute();
-                        $insertMembershipStmt->close();
+                        $conn->commit();
+                        $success = "Application cancelled.";
+                    } catch (Exception $e) {
+                        $conn->rollback();
+                        $error = "Could not cancel application. " . safeText($e->getMessage());
                     }
 
-                    if (!empty($applicationRow['role_id'])) {
-                        $updateRoleSql = "
-                            UPDATE Roles
-                            SET filled = 1
-                            WHERE role_id = ?
-                        ";
-                        $updateRoleStmt = $conn->prepare($updateRoleSql);
-
-                        if ($updateRoleStmt) {
-                            $updateRoleStmt->bind_param("i", $applicationRow['role_id']);
-                            $updateRoleStmt->execute();
-                            $updateRoleStmt->close();
-                        }
-                    }
-
-                    $conn->commit();
-                    $success = "Application accepted successfully.";
-                } catch (Exception $e) {
-                    $conn->rollback();
-                    $error = "Could not accept application.";
-                }
-
-            } elseif ($action === 'reject' && $isProjectOwner) {
-                $rejectSql = "
-                    UPDATE Applications
-                    SET status = 'rejected', reviewed_at = NOW()
-                    WHERE application_id = ?
-                ";
-                $rejectStmt = $conn->prepare($rejectSql);
-
-                if ($rejectStmt) {
-                    $rejectStmt->bind_param("i", $application_id);
-                    $rejectStmt->execute();
-                    $rejectStmt->close();
-                    $success = "Application rejected.";
                 } else {
-                    $error = "Could not reject application.";
+                    $error = "You are not authorized to perform this action.";
                 }
-
-            } elseif ($action === 'cancel' && $isApplicant) {
-                $cancelSql = "
-                    UPDATE Applications
-                    SET status = 'cancelled'
-                    WHERE application_id = ?
-                      AND applicant_id = ?
-                      AND status = 'pending'
-                ";
-                $cancelStmt = $conn->prepare($cancelSql);
-
-                if ($cancelStmt) {
-                    $cancelStmt->bind_param("ii", $application_id, $current_user_id);
-                    $cancelStmt->execute();
-                    $cancelStmt->close();
-                    $success = "Application cancelled.";
-                } else {
-                    $error = "Could not cancel application.";
-                }
-            } else {
-                $error = "You are not allowed to perform this action.";
             }
         }
     }
 }
 
-/*
-|--------------------------------------------------------------------------
-| 2. Applications received for my projects
-|--------------------------------------------------------------------------
-*/
+/*2. Applications received for my projects */
 $receivedApplications = [];
-
 $receivedSql = "
     SELECT
         a.application_id,
@@ -252,26 +239,20 @@ $receivedSql = "
         a.applied_at DESC
 ";
 
-$receivedStmt = $conn->prepare($receivedSql);
-if (!$receivedStmt) {
-    die("Received applications query failed: " . $conn->error);
+if ($receivedStmt = $conn->prepare($receivedSql)) {
+    $receivedStmt->bind_param("i", $current_user_id);
+    $receivedStmt->execute();
+    $receivedResult = $receivedStmt->get_result();
+    while ($row = $receivedResult->fetch_assoc()) {
+        $receivedApplications[] = $row;
+    }
+    $receivedStmt->close();
+} else {
+    $error .= " Could not retrieve received applications.";
 }
-$receivedStmt->bind_param("i", $current_user_id);
-$receivedStmt->execute();
-$receivedResult = $receivedStmt->get_result();
 
-while ($row = $receivedResult->fetch_assoc()) {
-    $receivedApplications[] = $row;
-}
-$receivedStmt->close();
-
-/*
-|--------------------------------------------------------------------------
-| 3. My applications
-|--------------------------------------------------------------------------
-*/
+/* 3. My applications */
 $myApplications = [];
-
 $mySql = "
     SELECT
         a.application_id,
@@ -291,28 +272,27 @@ $mySql = "
     ORDER BY a.applied_at DESC
 ";
 
-$myStmt = $conn->prepare($mySql);
-if (!$myStmt) {
-    die("My applications query failed: " . $conn->error);
+if ($myStmt = $conn->prepare($mySql)) {
+    $myStmt->bind_param("i", $current_user_id);
+    $myStmt->execute();
+    $myResult = $myStmt->get_result();
+    while ($row = $myResult->fetch_assoc()) {
+        $myApplications[] = $row;
+    }
+    $myStmt->close();
+} else {
+    $error .= " Could not retrieve your applications.";
 }
-$myStmt->bind_param("i", $current_user_id);
-$myStmt->execute();
-$myResult = $myStmt->get_result();
-
-while ($row = $myResult->fetch_assoc()) {
-    $myApplications[] = $row;
-}
-$myStmt->close();
 ?>
 
 <div class="applications-page">
     <div class="content-area">
 
-        <?php if ($success !== ''): ?>
+        <?php if ($success): ?>
             <div class="alert alert-success"><?php echo safeText($success); ?></div>
         <?php endif; ?>
 
-        <?php if ($error !== ''): ?>
+        <?php if ($error): ?>
             <div class="alert alert-danger"><?php echo safeText($error); ?></div>
         <?php endif; ?>
 

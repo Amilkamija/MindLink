@@ -1,4 +1,4 @@
-:root { 
+:root {
   --bg-color: #f7f5f0;
   --line-color: #d8d7cb;
 
@@ -26,6 +26,9 @@
 
   --cancelled-bg: #e7e3de;
   --cancelled-text: #5f5a51;
+
+  --unknown-bg: #ece8e1;
+  --unknown-text: #5a544c;
 }
 
 * {
@@ -84,6 +87,7 @@ body {
   font-size: 1.6rem;
   font-weight: 700;
   color: #111;
+  word-break: break-word;
 }
 
 .section-subtitle {
@@ -125,6 +129,7 @@ body {
   font-size: 1.18rem;
   font-weight: 700;
   color: #111;
+  word-break: break-word;
 }
 
 .application-role {
@@ -132,6 +137,7 @@ body {
   font-weight: 600;
   color: #2f3a1c;
   margin: 0;
+  word-break: break-word;
 }
 
 .status-badge {
@@ -144,6 +150,7 @@ body {
   font-size: 0.84rem;
   font-weight: 700;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .status-pending {
@@ -164,6 +171,11 @@ body {
 .status-cancelled {
   background: var(--cancelled-bg);
   color: var(--cancelled-text);
+}
+
+.status-unknown {
+  background: var(--unknown-bg);
+  color: var(--unknown-text);
 }
 
 .application-meta {
@@ -227,6 +239,7 @@ body {
   font-size: 0.94rem;
   line-height: 1.6;
   color: #111;
+  word-break: break-word;
 }
 
 .application-actions {
@@ -254,6 +267,7 @@ body {
   text-decoration: none;
   transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .btn-secondary-app {
@@ -340,9 +354,9 @@ body {
 
 @media (max-width: 991px) {
   .content-area {
-    padding: 18px 22px 30px;
-    width: calc(100% - 24px);
-    margin: 0 12px;
+    padding: 18px 22px 30px 10px;
+    width: calc(100% - 10px);
+    margin: 0 0 0 6px;
   }
 
   .applications-grid {
@@ -352,19 +366,6 @@ body {
   .application-meta,
   .application-card-soft .application-meta {
     grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 991px) {
-  .content-area {
-    padding: 18px 22px 30px 10px;
-    width: calc(100% - 10px);
-    margin: 0 0 0 6px;
-  }
-}
-
-  .section-pill {
-    width: 100%;
   }
 
   .application-card-top {
@@ -376,9 +377,41 @@ body {
     flex-direction: column;
   }
 
+  .inline-form {
+    width: 100%;
+  }
+
   .btn-secondary-app,
   .btn-accept,
   .btn-decline {
     width: 100%;
+  }
+}
+
+@media (max-width: 576px) {
+  .content-area {
+    padding: 14px;
+    width: 100%;
+    margin: 0;
+  }
+
+  .section-title {
+    font-size: 1.3rem;
+  }
+
+  .section-subtitle {
+    font-size: 0.92rem;
+  }
+
+  .application-card {
+    padding: 16px;
+  }
+
+  .section-pill {
+    width: 100%;
+  }
+
+  .status-badge {
+    min-width: auto;
   }
 }
