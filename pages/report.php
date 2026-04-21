@@ -25,6 +25,35 @@ if (!$current_user_row) {
 $is_suspended = ($current_user_row['status'] === 'suspended');
 $is_admin = ($current_user_row['role'] === 'admin');
 
+$appeal_success = '';
+$appeal_error   = '';
+$has_pending_appeal = false;
+
+if ($is_suspended) {
+    $stmt = $conn->prepare("SELECT 1 FROM Appeals WHERE user_id = ? AND status = 'pending' LIMIT 1");
+    $stmt->bind_param("i", $current_user_id);
+    $stmt->execute();
+    $stmt->store_result();
+    $has_pending_appeal = $stmt->num_rows > 0;
+    $stmt->close();
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['appeal_message'])) {
+        $appeal_msg = trim($_POST['appeal_message']);
+        if ($has_pending_appeal) {
+            $appeal_error = "You already have a pending appeal under review.";
+        } elseif ($appeal_msg === '') {
+            $appeal_error = "Please write a message for your appeal.";
+        } else {
+            $stmt = $conn->prepare("INSERT INTO Appeals (user_id, message) VALUES (?, ?)");
+            $stmt->bind_param("is", $current_user_id, $appeal_msg);
+            $stmt->execute();
+            $stmt->close();
+            $appeal_success  = "Your appeal has been submitted. We will review it shortly.";
+            $has_pending_appeal = true;
+        }
+    }
+}
+
 $prefill_project_id = isset($_GET['project_id']) ? (int)$_GET['project_id'] : 0;
 $prefill_user_id = isset($_GET['user_id']) ? (int)$_GET['user_id'] : 0;
 $conversation_id = isset($_GET['conversation_id']) ? (int)$_GET['conversation_id'] : 0;
@@ -171,6 +200,18 @@ require_once __DIR__ . '/../includes/header2.php';
 
         <?php if ($is_suspended): ?>
           <p class="report-error">Your account is suspended. You cannot submit a report.</p>
+          <?php if ($appeal_success): ?>
+            <div class="report-success" style="margin-top:12px;">
+              <p><?= htmlspecialchars($appeal_success) ?></p>
+            </div>
+          <?php elseif ($has_pending_appeal): ?>
+            <p style="color:#57673E; font-size:0.9rem; margin-top:10px;">You have a pending appeal currently under review.</p>
+          <?php else: ?>
+            <button type="button" class="report-submit-btn" style="margin-top:10px;"
+                    data-bs-toggle="modal" data-bs-target="#appealModal">
+              Appeal Your Suspension
+            </button>
+          <?php endif; ?>
         <?php endif; ?>
 
         <?php if ($success): ?>
@@ -246,6 +287,37 @@ require_once __DIR__ . '/../includes/header2.php';
     </div>
   </div>
 </div>
+
+<?php if ($is_suspended): ?>
+<div class="modal fade" id="appealModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content p-3">
+      <h5 class="modal-title mb-2">Appeal Your Suspension</h5>
+      <hr>
+      <?php if ($appeal_error): ?>
+        <p class="report-error"><?= htmlspecialchars($appeal_error) ?></p>
+      <?php endif; ?>
+      <form method="POST" action="">
+        <p style="font-size:0.88rem; color:#666; margin-bottom:10px;">
+          Explain why you believe your suspension should be reviewed. Be as specific as possible.
+        </p>
+        <textarea name="appeal_message" class="report-textarea" placeholder="Your message..." rows="4" maxlength="1000" required></textarea>
+        <div class="d-flex justify-content-between gap-2 mt-3">
+          <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-success">Submit Appeal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<?php if ($appeal_error): ?>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    new bootstrap.Modal(document.getElementById('appealModal')).show();
+  });
+</script>
+<?php endif; ?>
+<?php endif; ?>
 
 <script>
 function switchTab(type, btn) {

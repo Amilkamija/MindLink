@@ -178,10 +178,6 @@ if (!$user) {
     exit();
 }
 
-$profile_incomplete = $is_own_profile && (
-    empty($user['course']) || empty($user['year']) || empty($user['bio'])
-);
-
 $stmt = $conn->prepare("SELECT ROUND(AVG(score), 1) AS avg_score, COUNT(*) AS total FROM Ratings WHERE rated_user_id = ?");
 $stmt->bind_param("i", $profile_id);
 $stmt->execute();
@@ -210,6 +206,11 @@ while ($row = $tagsResult->fetch_assoc()) {
     $userTags[] = $row;
 }
 $stmt->close();
+
+$profile_incomplete = $is_own_profile && (
+    empty($user['course']) || empty($user['year']) || empty($user['bio']) ||
+    empty($skills) || empty($userTags)
+);
 
 
 $stmt = $conn->prepare("
@@ -266,7 +267,7 @@ function formatStatus($status) {
 <div id="profile-banner" class="profile-incomplete-banner">
   <div class="profile-banner-inner">
     <span class="profile-banner-icon">&#9888;</span>
-    <span class="profile-banner-text">Your profile is incomplete — you won't be able to apply to projects until you fill in your <strong>course</strong>, <strong>year</strong>, and <strong>bio</strong>.</span>
+    <span class="profile-banner-text">Your profile is incomplete — you won't be able to apply to projects until you fill in your <strong>course</strong>, <strong>year</strong>, <strong>bio</strong>, <strong>skills</strong>, and <strong>interests & hobbies</strong>.</span>
     <button class="profile-banner-close" onclick="dismissBanner()">&#10005;</button>
   </div>
 </div>
