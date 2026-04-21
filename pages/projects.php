@@ -14,7 +14,28 @@ if ($current_user_id) {
     $s_row = $s->get_result()->fetch_assoc();
     $s->close();
     $current_user_suspended = ($s_row && $s_row['status'] === 'suspended');
-    $current_profile_incomplete = ($s_row && (empty($s_row['course']) || empty($s_row['year']) || empty($s_row['bio'])));
+
+    $skill_count = 0;
+    $tag_count = 0;
+    if ($s_row) {
+        $s2 = $conn->prepare("SELECT COUNT(*) FROM UserSkills WHERE user_id = ?");
+        $s2->bind_param("i", $current_user_id);
+        $s2->execute();
+        $s2->bind_result($skill_count);
+        $s2->fetch();
+        $s2->close();
+
+        $s3 = $conn->prepare("SELECT COUNT(*) FROM UserTags WHERE user_id = ?");
+        $s3->bind_param("i", $current_user_id);
+        $s3->execute();
+        $s3->bind_result($tag_count);
+        $s3->fetch();
+        $s3->close();
+    }
+    $current_profile_incomplete = ($s_row && (
+        empty($s_row['course']) || empty($s_row['year']) || empty($s_row['bio']) ||
+        $skill_count === 0 || $tag_count === 0
+    ));
 }
 
 $status_filter = $_GET['status'] ?? '';
@@ -187,7 +208,7 @@ function shortText($text, $length = 140) {
     <div class="modal-content p-4 text-center">
     <h5 class="modal-title mb-2">Complete Your Profile First</h5>
     <hr>
-    <p style="font-size:0.95rem;">You need to fill in your <strong>course</strong>, <strong>year</strong>, and <strong>bio</strong> before you can apply to projects.</p>
+    <p style="font-size:0.95rem;">You need to fill in your <strong>course</strong>, <strong>year</strong>, <strong>bio</strong>, <strong>skills</strong>, and <strong>interests</strong> before you can apply to projects.</p>
     <div class="d-flex justify-content-center gap-3 mt-3">
         <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
         <a href="/pages/profile.php" class="btn btn-success">Go to Profile</a>

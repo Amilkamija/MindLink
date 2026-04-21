@@ -83,6 +83,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->bind_param("i", $project_id);
         $stmt->execute();
         $stmt->close();
+
+    } elseif (isset($_POST['reinstate_appeal'])) {
+        $appeal_id = (int)$_POST['appeal_id'];
+        $uid = (int)$_POST['user_id'];
+        $stmt = $conn->prepare("UPDATE Users SET status = 'active' WHERE user_id = ?");
+        $stmt->bind_param("i", $uid);
+        $stmt->execute();
+        $stmt->close();
+        $stmt = $conn->prepare("UPDATE Reports SET status = 'resolved' WHERE reported_user_id = ? AND status = 'open'");
+        $stmt->bind_param("i", $uid);
+        $stmt->execute();
+        $stmt->close();
+        $stmt = $conn->prepare("UPDATE Appeals SET status = 'reviewed' WHERE appeal_id = ?");
+        $stmt->bind_param("i", $appeal_id);
+        $stmt->execute();
+        $stmt->close();
+
+    } elseif (isset($_POST['dismiss_appeal'])) {
+        $appeal_id = (int)$_POST['appeal_id'];
+        $stmt = $conn->prepare("UPDATE Appeals SET status = 'reviewed' WHERE appeal_id = ?");
+        $stmt->bind_param("i", $appeal_id);
+        $stmt->execute();
+        $stmt->close();
     }
 
     header("Location: /pages/admin.php");
@@ -108,13 +131,50 @@ $userReportsRaw = $conn->query("
     COALESCE(rep.email, '[deleted user]') AS reporter_email
     FROM Reports r
     LEFT JOIN Users rep ON r.reporter_id = rep.user_id
-    WHERE r.status = 'open' AND r.project_id IS NULL
+    WHERE r.status = 'open' AND r.reported_user_id IS NOT NULL
     ORDER BY r.created_at DESC
 ")->fetch_all(MYSQLI_ASSOC);
 
 $userReports = [];
 foreach ($userReportsRaw as $row) {
     $userReports[$row['reported_user_id']][] = $row;
+}
+
+// Fetch chat logs for all reported users
+$chatLogs = [];
+foreach ($users as $u) {
+    if ($u['report_count'] <= 0) { continue; }
+    $uid = $u['user_id'];
+    $stmt = $conn->prepare("
+        SELECT c.conversation_id, c.type, c.created_at,p.title AS project_title,u2.email AS other_email
+        FROM Conversations c
+        JOIN ConversationParticipants cp ON cp.conversation_id = c.conversation_id AND cp.user_id = ?
+        LEFT JOIN Projects p ON c.project_id = p.project_id
+        LEFT JOIN ConversationParticipants cp2 ON cp2.conversation_id = c.conversation_id AND cp2.user_id != ?
+        LEFT JOIN Users u2 ON u2.user_id = cp2.user_id
+        ORDER BY c.created_at DESC
+    ");
+    $stmt->bind_param("ii", $uid, $uid);
+    $stmt->execute();
+    $convs = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $stmt->close();
+
+    $chatLogs[$uid] = [];
+    foreach ($convs as $conv) {
+        $cid = $conv['conversation_id'];
+        $stmt = $conn->prepare("
+            SELECT m.content, m.sent_at, u.email AS sender_email
+            FROM Messages m
+            JOIN Users u ON m.sender_id = u.user_id
+            WHERE m.conversation_id = ?
+            ORDER BY m.sent_at ASC
+        ");
+        $stmt->bind_param("i", $cid);
+        $stmt->execute();
+        $conv['messages'] = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $stmt->close();
+        $chatLogs[$uid][] = $conv;
+    }
 }
 
 
@@ -154,6 +214,19 @@ $projectReports = $conn->query("
 $projects = $conn->query("
     SELECT project_id, title, status, description FROM Projects ORDER BY created_at DESC
 ")->fetch_all(MYSQLI_ASSOC);
+
+$appealsRaw = $conn->query("
+    SELECT a.appeal_id, a.message, a.created_at, u.user_id, u.email
+    FROM Appeals a
+    JOIN Users u ON a.user_id = u.user_id
+    WHERE a.status = 'pending'
+    ORDER BY a.created_at ASC
+")->fetch_all(MYSQLI_ASSOC);
+
+$appeals = [];
+foreach ($appealsRaw as $ap) {
+    $appeals[$ap['user_id']] = $ap;
+}
 
 $extra_css = '/assets/css/admin.css';
 require_once __DIR__ . '/../includes/header2.php';
@@ -258,6 +331,10 @@ require_once __DIR__ . '/../includes/header2.php';
 
               <?php elseif ($user['status'] === 'suspended'): ?>
                 <a href="/pages/profile.php?id=<?= $user['user_id'] ?>" class="action-link">View</a>
+                <?php if (isset($appeals[$user['user_id']])): ?>
+                  <button type="button" class="action-link"
+                          data-bs-toggle="modal" data-bs-target="#appealUserModal<?= $idx ?>">Appeal</button>
+                <?php endif; ?>
                 <button type="button" class="action-link btn-green"
                         onclick="openConfirm('reinstate_user', <?= $user['user_id'] ?>, 'Reinstate <?= htmlspecialchars(addslashes($user['email'])) ?>?', 'This will restore their account access.', 'Reinstate', 'success')">Reinstate</button>
                 <button type="button" class="action-link btn-red"
@@ -267,6 +344,8 @@ require_once __DIR__ . '/../includes/header2.php';
                 <a href="/pages/profile.php?id=<?= $user['user_id'] ?>" class="action-link">View</a>
                 <button type="button" class="action-link"
                         data-bs-toggle="modal" data-bs-target="#reportModal<?= $idx ?>">View Report</button>
+                <button type="button" class="action-link"
+                        data-bs-toggle="modal" data-bs-target="#chatModal<?= $idx ?>">View Chats</button>
                 <button type="button" class="action-link btn-green"
                         onclick="openConfirm('suspend_user', <?= $user['user_id'] ?>, 'Suspend <?= htmlspecialchars(addslashes($user['email'])) ?>?', 'This account will be suspended and they won\'t be able to log in.', 'Suspend', 'warning')">Suspend</button>
                 <button type="button" class="action-link btn-red"
@@ -305,6 +384,86 @@ require_once __DIR__ . '/../includes/header2.php';
                     <button type="submit" name="dismiss_report" class="btn btn-secondary">Dismiss Report</button>
                   </form>
                   <button class="btn btn-link" data-bs-dismiss="modal">Close</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <?php endif; ?>
+
+          <?php if ($user['status'] === 'suspended' && isset($appeals[$user['user_id']])): ?>
+          <?php $ap = $appeals[$user['user_id']]; ?>
+          <div class="modal fade" id="appealUserModal<?= $idx ?>" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+              <div class="modal-content p-3">
+                <h5 class="modal-title mb-2">Appeal from <?= htmlspecialchars(explode('@', $user['email'])[0]) ?></h5>
+                <hr>
+                <p><strong>User:</strong> <?= htmlspecialchars($user['email']) ?></p>
+                <p><strong>Submitted:</strong> <?= htmlspecialchars($ap['created_at']) ?></p>
+                <p><strong>Message:</strong></p>
+                <p style="background:#f7f5ef; border-radius:8px; padding:10px; font-size:0.9rem;"><?= nl2br(htmlspecialchars($ap['message'])) ?></p>
+                <div class="d-flex justify-content-between gap-2 mt-3">
+                  <form method="POST" action="/pages/admin.php">
+                    <input type="hidden" name="appeal_id" value="<?= $ap['appeal_id'] ?>">
+                    <input type="hidden" name="user_id" value="<?= $user['user_id'] ?>">
+                    <button type="submit" name="reinstate_appeal" class="btn btn-success">Reinstate User</button>
+                  </form>
+                  <form method="POST" action="/pages/admin.php">
+                    <input type="hidden" name="appeal_id" value="<?= $ap['appeal_id'] ?>">
+                    <button type="submit" name="dismiss_appeal" class="btn btn-danger">Dismiss Appeal</button>
+                  </form>
+                </div>
+                <div class="d-flex justify-content-center mt-2">
+                  <button class="btn btn-link" data-bs-dismiss="modal">Close</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <?php endif; ?>
+
+          <?php if ($user['report_count'] > 0): ?>
+          <div class="modal fade" id="chatModal<?= $idx ?>" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+              <div class="modal-content p-3">
+                <h5 class="modal-title mb-2">Chat Logs — <?= htmlspecialchars(explode('@', $user['email'])[0]) ?></h5>
+                <hr>
+                <?php $userConvs = $chatLogs[$user['user_id']] ?? []; ?>
+                <?php if (empty($userConvs)): ?>
+                  <p style="color:#aaa;">This user has no conversations.</p>
+                <?php else: ?>
+                  <?php foreach ($userConvs as $conv): ?>
+                    <?php
+                      $label = $conv['type'] === 'project'
+                        ? 'Project: ' . ($conv['project_title'] ?? 'Unknown')
+                        : 'Private with ' . explode('@', $conv['other_email'] ?? 'unknown')[0];
+                    ?>
+                    <div style="margin-bottom:14px;">
+                      <div style="font-size:0.82rem; font-weight:600; color:#57673E; margin-bottom:6px;">
+                        <?= htmlspecialchars($label) ?>
+                        <span style="font-weight:400; color:#999; margin-left:6px;"><?= htmlspecialchars($conv['created_at']) ?></span>
+                      </div>
+                      <?php if (empty($conv['messages'])): ?>
+                        <p style="color:#aaa; font-size:0.82rem;">No messages.</p>
+                      <?php else: ?>
+                        <div style="max-height:220px; overflow-y:auto; display:flex; flex-direction:column; gap:6px; background:#f7f5ef; border-radius:8px; padding:10px;">
+                          <?php foreach ($conv['messages'] as $msg): ?>
+                            <?php $isSender = (explode('@', $msg['sender_email'])[0] === explode('@', $user['email'])[0]); ?>
+                            <div style="display:flex; flex-direction:column; align-items:<?= $isSender ? 'flex-end' : 'flex-start' ?>;">
+                              <span style="font-size:0.7rem; color:#888; margin-bottom:2px;">
+                                <?= htmlspecialchars(explode('@', $msg['sender_email'])[0]) ?> · <?= htmlspecialchars($msg['sent_at']) ?>
+                              </span>
+                              <div style="background:<?= $isSender ? '#57673E' : '#e8e6df' ?>; color:<?= $isSender ? '#FCF9F2' : '#222' ?>; border-radius:10px; padding:6px 11px; max-width:75%; font-size:0.85rem; word-break:break-word;">
+                                <?= htmlspecialchars($msg['content']) ?>
+                              </div>
+                            </div>
+                          <?php endforeach; ?>
+                        </div>
+                      <?php endif; ?>
+                    </div>
+                    <hr style="margin:8px 0;">
+                  <?php endforeach; ?>
+                <?php endif; ?>
+                <div class="d-flex justify-content-end mt-2">
+                  <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
               </div>
             </div>

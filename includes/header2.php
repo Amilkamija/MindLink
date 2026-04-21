@@ -30,7 +30,7 @@ if (!empty($_COOKIE['first_login']) && isset($_SESSION['user_id'])) {
     <div class="container-fluid px-4">
 
     <div class="d-flex gap-3 align-items-center">
-        <a class="nav-link" href="/pages/contact.php">CONTACT US</a>
+        <a class="nav-link" href="/pages/contact.php">CONTACT</a>
         <a class="nav-link" href="/pages/aboutus.php">ABOUT US</a>
     </div>
 
