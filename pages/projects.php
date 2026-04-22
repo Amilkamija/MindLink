@@ -54,12 +54,39 @@ $sql = "
         u.course,
         u.year,
         u.email
+";
+
+if ($current_user_id) {
+    $sql .= ",
+        CASE 
+            WHEN EXISTS (
+                SELECT 1
+                FROM Applications a
+                WHERE a.project_id = p.project_id
+                  AND a.applicant_id = ?
+                LIMIT 1
+            ) THEN 1
+            ELSE 0
+        END AS has_applied
+    ";
+} else {
+    $sql .= ",
+        0 AS has_applied
+    ";
+}
+
+$sql .= "
     FROM Projects p
     JOIN Users u ON p.owner_id = u.user_id
 ";
 
 $params = [];
 $types = "";
+
+if ($current_user_id) {
+    $params[] = $current_user_id;
+    $types .= "i";
+}
 
 if (!empty($status_filter) && in_array($status_filter, $allowed_statuses, true)) {
     $sql .= " WHERE p.status = ? ";
@@ -117,11 +144,11 @@ function shortText($text, $length = 140) {
     <div class="section-line"></div>
 
     <div class="d-flex flex-wrap gap-2 mb-4 mt-3">
-    <a href="/pages/projects.php" class="my-projects-btn filter-all">All</a>
-    <a href="/pages/projects.php?status=open" class="my-projects-btn filter-open">Open</a>
-    <a href="/pages/projects.php?status=in_progress" class="my-projects-btn filter-progress">In Progress</a>
-    <a href="/pages/projects.php?status=completed" class="my-projects-btn filter-completed">Completed</a>
-</div>
+        <a href="/pages/projects.php" class="my-projects-btn filter-all">All</a>
+        <a href="/pages/projects.php?status=open" class="my-projects-btn filter-open">Open</a>
+        <a href="/pages/projects.php?status=in_progress" class="my-projects-btn filter-progress">In Progress</a>
+        <a href="/pages/projects.php?status=completed" class="my-projects-btn filter-completed">Completed</a>
+    </div>
 
     <?php if ($result && $result->num_rows > 0): ?>
         <?php while ($project = $result->fetch_assoc()): ?>
@@ -181,6 +208,9 @@ function shortText($text, $length = 140) {
 
                     <?php elseif ($project['status'] === 'completed'): ?>
                         <span class="apply-btn" style="opacity: 0.6; pointer-events: none;">Completed</span>
+
+                    <?php elseif ((int)$project['has_applied'] === 1): ?>
+                        <span class="apply-btn" style="opacity: 0.6; pointer-events: none;">Applied</span>
 
                     <?php else: ?>
                         <a href="/pages/apply.php?project_id=<?php echo (int)$project['project_id']; ?>" class="apply-btn">
