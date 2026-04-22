@@ -20,7 +20,7 @@ $success = '';
 $error = '';
 
 $user_sql = "
-    SELECT user_id, status
+    SELECT user_id, status, course, year, bio
     FROM Users
     WHERE user_id = ?
     LIMIT 1
@@ -44,8 +44,24 @@ if (!$current_user) {
     exit();
 }
 
+$stmt = $conn->prepare("SELECT COUNT(*) FROM UserSkills WHERE user_id = ?");
+$stmt->bind_param("i", $current_user_id);
+$stmt->execute();
+$stmt->bind_result($skill_count);
+$stmt->fetch();
+$stmt->close();
+
+$stmt = $conn->prepare("SELECT COUNT(*) FROM UserTags WHERE user_id = ?");
+$stmt->bind_param("i", $current_user_id);
+$stmt->execute();
+$stmt->bind_result($tag_count);
+$stmt->fetch();
+$stmt->close();
+
 if (($current_user['status'] ?? 'active') === 'suspended') {
     $error = "Your account is suspended and you cannot apply to projects.";
+} elseif (empty($current_user['course']) || empty($current_user['year']) || empty($current_user['bio']) || $skill_count === 0 || $tag_count === 0) {
+    $error = "incomplete_profile";
 }
 
 $project_sql = "
@@ -246,7 +262,11 @@ function statusClass($status) {
     <?php endif; ?>
 
     <?php if (!empty($error)): ?>
-        <div class="alert alert-danger"><?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?></div>
+        <?php if ($error === 'incomplete_profile'): ?>
+            <div class="alert alert-danger">You need to complete your profile (course, year, bio, skills, interests and hobbies) before applying. <a href="/pages/profile.php">Complete your profile</a></div>
+        <?php else: ?>
+            <div class="alert alert-danger"><?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?></div>
+        <?php endif; ?>
     <?php endif; ?>
 
     <div class="apply-project-card">

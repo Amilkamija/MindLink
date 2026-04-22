@@ -7,11 +7,12 @@ $is_https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
             || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
 
 session_set_cookie_params([
-    'lifetime' => 1800,
-    'path'     => '/',
+    'lifetime' => 1800,// Cookie expires after 30 minutes of inactivity
+    'path'     => '/', 
     'secure'   => $is_https,
     'httponly' => true
 ]);
+
 
 function regenerateSessionId() {
     session_regenerate_id();

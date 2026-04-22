@@ -16,7 +16,7 @@ body {
     font-weight: 400;
     letter-spacing: 4px;
     color: #57673E !important;
-    font-size: 1.5rem;  /* was 1.25rem, increase this number */
+    font-size: 1.5rem;
     text-decoration: none;
     position: absolute;
     left: 50%;
@@ -164,4 +164,66 @@ body {
 #logoutModal .btn-dark:hover {
     background-color: #354C2B;
     border-color: #354C2B;
+}
+
+/* Cookie consent banner */
+.cookie-banner {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #354C2B;
+    color: #FCF9F2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 28px;
+    z-index: 10000;
+    flex-wrap: wrap;
+}
+
+.cookie-text {
+    font-size: 0.9rem;
+    flex: 1;
+}
+
+.cookie-text strong {
+    display: block;
+    margin-bottom: 2px;
+}
+
+.cookie-actions {
+    display: flex;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.cookie-btn-accept {
+    padding: 7px 22px;
+    background-color: #a9b97b;
+    color: #000;
+    border: none;
+    border-radius: 999px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.cookie-btn-accept:hover {
+    background-color: #b7c86d;
+}
+
+.cookie-btn-decline {
+    padding: 7px 22px;
+    background: none;
+    border: 1px solid #FCF9F2;
+    border-radius: 999px;
+    font-size: 0.9rem;
+    color: #FCF9F2;
+    cursor: pointer;
+}
+
+.cookie-btn-decline:hover {
+    background-color: rgba(255,255,255,0.1);
 }
