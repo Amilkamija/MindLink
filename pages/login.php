@@ -23,10 +23,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header("Location: /pages/home.php");
             exit();
         } else {
-            $error = "Incorrect password!";
+            $error = "Invalid email or password.";
         }
     } else {
-        $error = "No account found with that email!";
+        $error = "Invalid email or password.";
     }
 }
 ?>

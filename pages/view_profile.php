@@ -15,7 +15,7 @@ if ($profile_id <= 0) {
     exit();
 }
 
-$stmt = $conn->prepare("SELECT user_id, email, course, year, bio FROM Users WHERE user_id = ?");
+$stmt = $conn->prepare("SELECT user_id, email, course, year, bio, profile_picture FROM Users WHERE user_id = ?");
 $stmt->bind_param("i", $profile_id);
 $stmt->execute();
 $user = $stmt->get_result()->fetch_assoc();
@@ -57,6 +57,16 @@ while ($row = $skillsResult->fetch_assoc()) {
 }
 $stmt->close();
 
+$stmt = $conn->prepare("SELECT tag_name FROM UserTags WHERE user_id = ?");
+$stmt->bind_param("i", $profile_id);
+$stmt->execute();
+$tagsResult = $stmt->get_result();
+$userTags = [];
+while ($row = $tagsResult->fetch_assoc()) {
+    $userTags[] = $row['tag_name'];
+}
+$stmt->close();
+
 $stmt = $conn->prepare("
     SELECT DISTINCT
         p.project_id,
@@ -92,8 +102,13 @@ $display_name = ucwords(str_replace(['.', '_', '-'], ' ', $email_prefix));
     <div class="profile-top-section">
         <div class="profile-avatar-wrap">
             <div class="profile-avatar">
-                <div class="profile-avatar-head"></div>
-                <div class="profile-avatar-body"></div>
+                <?php if (!empty($user['profile_picture'])): ?>
+                    <img src="/assets/uploads/profiles/<?= htmlspecialchars($user['profile_picture']) ?>"
+                        alt="Profile" class="profile-avatar-img">
+                <?php else: ?>
+                    <div class="profile-avatar-head"></div>
+                    <div class="profile-avatar-body"></div>
+                <?php endif; ?>
             </div>
         </div>
 
@@ -128,6 +143,16 @@ $display_name = ucwords(str_replace(['.', '_', '-'], ' ', $email_prefix));
         <div class="section-pill">Skills</div>
         <div class="about-text">
             <?= implode(', ', array_map('htmlspecialchars', $skills)) ?>
+        </div>
+    <?php endif; ?>
+
+    <?php if (!empty($userTags)): ?>
+        <div class="section-line profile-line"></div>
+        <div class="section-pill">Interests &amp; Hobbies</div>
+        <div class="tags-container">
+            <?php foreach ($userTags as $tag): ?>
+                <span class="tag-chip"><?= htmlspecialchars($tag) ?></span>
+            <?php endforeach; ?>
         </div>
     <?php endif; ?>
 
