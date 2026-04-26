@@ -26,7 +26,6 @@ $role_1_title = '';
 $role_2_title = '';
 $role_3_title = '';
 
-// Check that current user still exists and is allowed to create projects
 $user_sql = "
     SELECT user_id, status
     FROM Users
@@ -97,104 +96,131 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $can_create_project) {
             $full_description .= "\nPreferred Year: " . $project_year;
         }
 
-        $conn->begin_transaction();
+        // Prevent duplicate projects based on title + description
+        $normalized_title = preg_replace('/\s+/', ' ', strtolower(trim($project_title)));
+        $normalized_description = preg_replace('/\s+/', ' ', strtolower(trim($project_description)));
 
-        try {
-            $project_sql = "
-                INSERT INTO Projects (owner_id, title, description, team_size, deadline, status, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, NOW())
-            ";
+        $duplicate_sql = "
+            SELECT project_id, title
+            FROM Projects
+            WHERE LOWER(TRIM(title)) = ?
+              AND LOWER(TRIM(SUBSTRING_INDEX(description, '\n\nModule / Subject:', 1))) = ?
+            LIMIT 1
+        ";
 
-            $project_stmt = $conn->prepare($project_sql);
+        $duplicate_stmt = $conn->prepare($duplicate_sql);
+        if (!$duplicate_stmt) {
+            die("Prepare failed: " . $conn->error);
+        }
 
-            if (!$project_stmt) {
-                throw new Exception("Prepare failed: " . $conn->error);
-            }
+        $duplicate_stmt->bind_param("ss", $normalized_title, $normalized_description);
+        $duplicate_stmt->execute();
+        $duplicate_result = $duplicate_stmt->get_result();
+        $duplicate_project = $duplicate_result->fetch_assoc();
+        $duplicate_stmt->close();
 
-            $project_stmt->bind_param(
-                "ississ",
-                $current_user_id,
-                $project_title,
-                $full_description,
-                $team_size_int,
-                $deadline,
-                $project_status
-            );
+        if ($duplicate_project) {
+            $error = "This project appears identical to an existing project. Please add a unique identifier such as a group number, version, or team name in the title or description so users can tell the projects apart.";
+        } else {
+            $conn->begin_transaction();
 
-            if (!$project_stmt->execute()) {
-                throw new Exception("Failed to create project.");
-            }
+            try {
+                $project_sql = "
+                    INSERT INTO Projects (owner_id, title, description, team_size, deadline, status, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, NOW())
+                ";
 
-            $project_id = $conn->insert_id;
-            $project_stmt->close();
+                $project_stmt = $conn->prepare($project_sql);
 
-            $roles = [
-                $role_1_title,
-                $role_2_title,
-                $role_3_title
-            ];
-
-            $role_insert_sql = "
-                INSERT INTO Roles (project_id, title, description, filled)
-                VALUES (?, ?, ?, 0)
-            ";
-
-            $role_stmt = $conn->prepare($role_insert_sql);
-
-            if (!$role_stmt) {
-                throw new Exception("Prepare failed: " . $conn->error);
-            }
-
-            foreach ($roles as $index => $role_title) {
-                if ($role_title !== '') {
-                    $role_description = "Role " . ($index + 1) . " for " . $project_title;
-                    $role_stmt->bind_param("iss", $project_id, $role_title, $role_description);
-
-                    if (!$role_stmt->execute()) {
-                        throw new Exception("Failed to create one of the project roles.");
-                    }
-                }
-            }
-
-            $role_stmt->close();
-
-            $tags_array = array_filter(array_map('trim', explode(',', $skills_tags)));
-
-            if (!empty($tags_array)) {
-                $tag_sql = "INSERT INTO ProjectTags (project_id, tag_name) VALUES (?, ?)";
-                $tag_stmt = $conn->prepare($tag_sql);
-
-                if (!$tag_stmt) {
+                if (!$project_stmt) {
                     throw new Exception("Prepare failed: " . $conn->error);
                 }
 
-                foreach ($tags_array as $tag) {
-                    $tag_stmt->bind_param("is", $project_id, $tag);
-                    if (!$tag_stmt->execute()) {
-                        throw new Exception("Failed to save project tags.");
+                $project_stmt->bind_param(
+                    "ississ",
+                    $current_user_id,
+                    $project_title,
+                    $full_description,
+                    $team_size_int,
+                    $deadline,
+                    $project_status
+                );
+
+                if (!$project_stmt->execute()) {
+                    throw new Exception("Failed to create project.");
+                }
+
+                $project_id = $conn->insert_id;
+                $project_stmt->close();
+
+                $roles = [
+                    $role_1_title,
+                    $role_2_title,
+                    $role_3_title
+                ];
+
+                $role_insert_sql = "
+                    INSERT INTO Roles (project_id, title, description, filled)
+                    VALUES (?, ?, ?, 0)
+                ";
+
+                $role_stmt = $conn->prepare($role_insert_sql);
+
+                if (!$role_stmt) {
+                    throw new Exception("Prepare failed: " . $conn->error);
+                }
+
+                foreach ($roles as $index => $role_title) {
+                    if ($role_title !== '') {
+                        $role_description = "Role " . ($index + 1) . " for " . $project_title;
+                        $role_stmt->bind_param("iss", $project_id, $role_title, $role_description);
+
+                        if (!$role_stmt->execute()) {
+                            throw new Exception("Failed to create one of the project roles.");
+                        }
                     }
                 }
 
-                $tag_stmt->close();
+                $role_stmt->close();
+
+                $tags_array = array_filter(array_map('trim', explode(',', $skills_tags)));
+
+                if (!empty($tags_array)) {
+                    $tag_sql = "INSERT INTO ProjectTags (project_id, tag_name) VALUES (?, ?)";
+                    $tag_stmt = $conn->prepare($tag_sql);
+
+                    if (!$tag_stmt) {
+                        throw new Exception("Prepare failed: " . $conn->error);
+                    }
+
+                    foreach ($tags_array as $tag) {
+                        $tag_stmt->bind_param("is", $project_id, $tag);
+                        if (!$tag_stmt->execute()) {
+                            throw new Exception("Failed to save project tags.");
+                        }
+                    }
+
+                    $tag_stmt->close();
+                }
+
+                $conn->commit();
+
+                $success = "Project created successfully.";
+                $project_title = '';
+                $module_subject = '';
+                $project_year = '';
+                $project_description = '';
+                $team_size = '';
+                $project_status = 'open';
+                $deadline = '';
+                $skills_tags = '';
+                $role_1_title = '';
+                $role_2_title = '';
+                $role_3_title = '';
+            } catch (Exception $e) {
+                $conn->rollback();
+                $error = $e->getMessage();
             }
-
-            $conn->commit();
-
-            $success = "Project created successfully.";
-            $project_title = '';
-            $module_subject = '';
-            $project_year = '';
-            $project_description = '';
-            $team_size = '';
-            $project_status = 'open';
-            $deadline = '';
-            $skills_tags = '';
-            $role_1_title = '';
-            $role_2_title = '';
-            $role_3_title = '';
-        } catch (Exception $e) {
-            $conn->rollback();
-            $error = $e->getMessage();
         }
     }
 }
