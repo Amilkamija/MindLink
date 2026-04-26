@@ -264,7 +264,7 @@ body {
 .admin-table-header,
 .admin-table-row {
   display: grid;
-  grid-template-columns: 1.8fr 1fr 0.5fr 0.8fr 2.2fr;
+  grid-template-columns: 1.8fr 1.4fr 0.95fr 0.85fr 0.65fr;
   align-items: center;
   column-gap: 12px;
 }
@@ -504,7 +504,7 @@ body {
 
   .admin-table-header,
   .admin-table-row {
-    grid-template-columns: 1.2fr 0.8fr 0.7fr 1fr 2fr;
+    grid-template-columns: 1.2fr 1.1fr 0.95fr 0.85fr 0.65fr;
     font-size: 0.95rem;
   }
 

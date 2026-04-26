@@ -88,7 +88,7 @@ require_once __DIR__ . '/../includes/header2.php';
         <div class="report-card" style="margin-bottom:18px;">
           <div class="report-card-header" style="font-size:0.9rem;">
             <?= htmlspecialchars($label) ?>
-            <span style="font-size:0.78rem; opacity:0.75; margin-left:8px;"><?= htmlspecialchars($conv['created_at']) ?></span>
+            <span style="font-size:0.78rem; opacity:0.75; margin-left:8px;"><?= date('d-m-Y', strtotime($conv['created_at'])) ?></span>
           </div>
           <div class="report-card-body" style="padding:14px 18px;">
             <?php if (empty($messages)): ?>
@@ -99,7 +99,7 @@ require_once __DIR__ . '/../includes/header2.php';
                   <?php $is_reported = (explode('@', $msg['sender_email'])[0] === explode('@', $reported_user['email'])[0]); ?>
                   <div style="display:flex; flex-direction:column; align-items:<?= $is_reported ? 'flex-end' : 'flex-start' ?>;">
                     <span style="font-size:0.72rem; color:#888; margin-bottom:2px;">
-                      <?= htmlspecialchars(explode('@', $msg['sender_email'])[0]) ?> · <?= htmlspecialchars($msg['sent_at']) ?>
+                      <?= htmlspecialchars(explode('@', $msg['sender_email'])[0]) ?> · <?= date('d-m-Y H:i', strtotime($msg['sent_at'])) ?>
                     </span>
                     <div style="
                       background: <?= $is_reported ? '#57673E' : '#e8e6df' ?>;

@@ -8,6 +8,11 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
+function yearLabel($y) {
+    $map = [1=>'Year 1',2=>'Year 2',3=>'Year 3',4=>'Year 4',5=>'Year 5',6=>'Postgraduate',7=>'Master'];
+    return $map[(int)$y] ?? ($y ? htmlspecialchars((string)$y) : '—');
+}
+
 $profile_id = isset($_GET['user_id']) ? (int)$_GET['user_id'] : 0;
 
 if ($profile_id <= 0) {
@@ -115,7 +120,7 @@ $display_name = ucwords(str_replace(['.', '_', '-'], ' ', $email_prefix));
         <div class="profile-details">
             <p><strong>Email:</strong> <?= htmlspecialchars($user['email']) ?></p>
             <p><strong>Course:</strong> <?= htmlspecialchars($user['course'] ?? '—') ?></p>
-            <p><strong>Year:</strong> <?= htmlspecialchars($user['year'] ?? '—') ?></p>
+            <p><strong>Year:</strong> <?= yearLabel($user['year'] ?? 0) ?></p>
         </div>
 
         <div class="profile-rating">

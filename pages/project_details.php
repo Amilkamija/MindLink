@@ -81,7 +81,7 @@ function formatDateReadable($dateValue, $fallback = 'Not specified')
         return $fallback;
     }
 
-    return date('d M Y', $timestamp);
+    return date('d-m-Y', $timestamp);
 }
 
 function pageExists($filename)
