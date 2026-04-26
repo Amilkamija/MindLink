@@ -6,6 +6,16 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
 }
 require_once __DIR__ . '/../config/db.php';
 
+function yearLabel($y) {
+    $map = [1=>'Year 1',2=>'Year 2',3=>'Year 3',4=>'Year 4',5=>'Year 5',6=>'Postgraduate',7=>'Master'];
+    return $map[(int)$y] ?? ($y ? htmlspecialchars((string)$y) : '—');
+}
+
+function fmtDate($val) {
+    $t = strtotime((string)$val);
+    return $t ? date('d-m-Y', $t) : htmlspecialchars((string)$val);
+}
+
 function resolveReport($conn, $report_id) {
     $stmt = $conn->prepare("UPDATE Reports SET status = 'resolved' WHERE report_id = ?");
     $stmt->bind_param("i", $report_id);
@@ -18,12 +28,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         resolveReport($conn, (int)$_POST['report_id']);
 
     } elseif (isset($_POST['resolve_remove'])) {
-        $report_id   = (int)$_POST['report_id'];
+        $report_id   = (int)($_POST['report_id'] ?? 0);
         $reported_id = (int)$_POST['reported_user_id'];
-        $stmt = $conn->prepare("DELETE FROM TeamMembership WHERE user_id = ?");
-        $stmt->bind_param("i", $reported_id);
-        $stmt->execute();
-        $stmt->close();
+        $project_id  = (int)($_POST['remove_project_id'] ?? 0);
+        if ($project_id > 0) {
+            $stmt = $conn->prepare("DELETE FROM TeamMembership WHERE user_id = ? AND project_id = ?");
+            $stmt->bind_param("ii", $reported_id, $project_id);
+            $stmt->execute();
+            $stmt->close();
+        }
+        if ($report_id > 0) { resolveReport($conn, $report_id); }
+
+    } elseif (isset($_POST['resolve_remove_chat'])) {
+        $report_id      = (int)($_POST['report_id'] ?? 0);
+        $reported_id    = (int)$_POST['reported_user_id'];
+        $conversation_id = (int)($_POST['remove_conversation_id'] ?? 0);
+        if ($conversation_id > 0) {
+            $stmt = $conn->prepare("DELETE FROM ConversationParticipants WHERE user_id = ? AND conversation_id = ?");
+            $stmt->bind_param("ii", $reported_id, $conversation_id);
+            $stmt->execute();
+            $stmt->close();
+        }
         resolveReport($conn, $report_id);
 
     } elseif (isset($_POST['remove_project'])) {
@@ -127,7 +152,7 @@ $users = $conn->query("
 ")->fetch_all(MYSQLI_ASSOC);
 
 $userReportsRaw = $conn->query("
-    SELECT r.report_id, r.reason, r.created_at, r.reported_user_id,
+    SELECT r.report_id, r.reason, r.created_at, r.reporter_id, r.reported_user_id,
     COALESCE(rep.email, '[deleted user]') AS reporter_email
     FROM Reports r
     LEFT JOIN Users rep ON r.reporter_id = rep.user_id
@@ -140,18 +165,19 @@ foreach ($userReportsRaw as $row) {
     $userReports[$row['reported_user_id']][] = $row;
 }
 
-// Fetch chat logs for all reported users
+// Fetch chat logs for all users
 $chatLogs = [];
 foreach ($users as $u) {
-    if ($u['report_count'] <= 0) { continue; }
     $uid = $u['user_id'];
     $stmt = $conn->prepare("
-        SELECT c.conversation_id, c.type, c.created_at,p.title AS project_title,u2.email AS other_email
+        SELECT c.conversation_id, c.type, c.created_at, p.title AS project_title,
+        MIN(u2.email) AS other_email
         FROM Conversations c
         JOIN ConversationParticipants cp ON cp.conversation_id = c.conversation_id AND cp.user_id = ?
         LEFT JOIN Projects p ON c.project_id = p.project_id
         LEFT JOIN ConversationParticipants cp2 ON cp2.conversation_id = c.conversation_id AND cp2.user_id != ?
         LEFT JOIN Users u2 ON u2.user_id = cp2.user_id
+        GROUP BY c.conversation_id, c.type, c.created_at, p.title
         ORDER BY c.created_at DESC
     ");
     $stmt->bind_param("ii", $uid, $uid);
@@ -180,7 +206,7 @@ foreach ($users as $u) {
 
 $reports = $conn->query("
     SELECT r.report_id, r.reason, r.created_at,
-    r.reported_user_id,
+    r.reporter_id, r.reported_user_id,
     COALESCE(rep.email,  '[deleted user]') AS reporter_email,
     COALESCE(rep2.email, '[deleted user]') AS reported_email
     FROM Reports r
@@ -189,6 +215,47 @@ $reports = $conn->query("
     WHERE r.status = 'open' AND r.project_id IS NULL AND r.reported_user_id IS NOT NULL
     ORDER BY r.created_at DESC
 ")->fetch_all(MYSQLI_ASSOC);
+
+$reportedUserProjects = [];
+foreach ($users as $rp) {
+    $uid = (int)$rp['user_id'];
+    if (isset($reportedUserProjects[$uid])) continue;
+    $stmt = $conn->prepare("
+        SELECT p.project_id, p.title
+        FROM TeamMembership tm
+        JOIN Projects p ON p.project_id = tm.project_id
+        WHERE tm.user_id = ?
+    ");
+    $stmt->bind_param("i", $uid);
+    $stmt->execute();
+    $reportedUserProjects[$uid] = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $stmt->close();
+}
+
+$reportedUserConversations = [];
+foreach ($reports as $rp) {
+    $reported_id = (int)$rp['reported_user_id'];
+    $reporter_id = (int)$rp['reporter_id'];
+    $key = $reported_id . '_' . $reporter_id;
+    if (isset($reportedUserConversations[$key])) continue;
+    $stmt = $conn->prepare("
+        SELECT c.conversation_id,
+        CASE WHEN c.type = 'project' THEN CONCAT('Group: ', p.title)
+        ELSE CONCAT('Private: ', MIN(u2.email))
+        END AS label
+        FROM Conversations c
+        JOIN ConversationParticipants cp1 ON cp1.conversation_id = c.conversation_id AND cp1.user_id = ?
+        JOIN ConversationParticipants cp2 ON cp2.conversation_id = c.conversation_id AND cp2.user_id = ?
+        LEFT JOIN Projects p ON p.project_id = c.project_id
+        LEFT JOIN ConversationParticipants cp3 ON cp3.conversation_id = c.conversation_id AND cp3.user_id != ?
+        LEFT JOIN Users u2 ON u2.user_id = cp3.user_id
+        GROUP BY c.conversation_id, c.type, p.title
+    ");
+    $stmt->bind_param("iii", $reported_id, $reporter_id, $reported_id);
+    $stmt->execute();
+    $reportedUserConversations[$key] = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $stmt->close();
+}
 
 $generalReports = $conn->query("
     SELECT r.report_id, r.reason, r.created_at,
@@ -214,6 +281,20 @@ $projectReports = $conn->query("
 $projects = $conn->query("
     SELECT project_id, title, status, description FROM Projects ORDER BY created_at DESC
 ")->fetch_all(MYSQLI_ASSOC);
+
+$pastReportsRaw = $conn->query("
+    SELECT r.reason, r.created_at, r.reported_user_id,
+    COALESCE(rep.email, '[deleted user]') AS reporter_email
+    FROM Reports r
+    LEFT JOIN Users rep ON r.reporter_id = rep.user_id
+    WHERE r.status = 'resolved' AND r.reported_user_id IS NOT NULL
+    ORDER BY r.created_at DESC
+")->fetch_all(MYSQLI_ASSOC);
+
+$pastReports = [];
+foreach ($pastReportsRaw as $row) {
+    $pastReports[$row['reported_user_id']][] = $row;
+}
 
 $appealsRaw = $conn->query("
     SELECT a.appeal_id, a.message, a.created_at, u.user_id, u.email
@@ -312,7 +393,7 @@ require_once __DIR__ . '/../includes/header2.php';
           <div class="admin-table-row" data-search="<?= htmlspecialchars(strtolower($user['email'] . ' ' . $user['course'] . ' ' . $user['year'])) ?>">
             <div><?= htmlspecialchars($user['email']) ?></div>
             <div><?= htmlspecialchars($user['course'] ?? '—') ?></div>
-            <div><?= htmlspecialchars($user['year'] ?? '—') ?></div>
+            <div><?= yearLabel($user['year'] ?? 0) ?></div>
             <div>
               <?php if ($user['status'] === 'suspended'): ?>
                 <span class="status-suspended">Suspended</span>
@@ -330,61 +411,198 @@ require_once __DIR__ . '/../includes/header2.php';
                 <span style="color:#999;">—</span>
 
               <?php elseif ($user['status'] === 'suspended'): ?>
-                <a href="/pages/profile.php?id=<?= $user['user_id'] ?>" class="action-link">View</a>
+                <button type="button" class="action-link"
+                        onclick="new bootstrap.Modal(document.getElementById('userActiveModal<?= $idx ?>')).show()">View</button>
                 <?php if (isset($appeals[$user['user_id']])): ?>
                   <button type="button" class="action-link"
                           data-bs-toggle="modal" data-bs-target="#appealUserModal<?= $idx ?>">Appeal</button>
                 <?php endif; ?>
-                <button type="button" class="action-link btn-green"
-                        onclick="openConfirm('reinstate_user', <?= $user['user_id'] ?>, 'Reinstate <?= htmlspecialchars(addslashes($user['email'])) ?>?', 'This will restore their account access.', 'Reinstate', 'success')">Reinstate</button>
-                <button type="button" class="action-link btn-red"
-                        onclick="openConfirm('remove_user', <?= $user['user_id'] ?>, 'Remove <?= htmlspecialchars(addslashes($user['email'])) ?>?', 'This will permanently delete the account and remove it from all the projects.', 'Remove', 'danger')">Remove</button>
 
               <?php elseif ($user['report_count'] > 0): ?>
-                <a href="/pages/profile.php?id=<?= $user['user_id'] ?>" class="action-link">View</a>
                 <button type="button" class="action-link"
-                        data-bs-toggle="modal" data-bs-target="#reportModal<?= $idx ?>">View Report</button>
-                <button type="button" class="action-link"
-                        data-bs-toggle="modal" data-bs-target="#chatModal<?= $idx ?>">View Chats</button>
-                <button type="button" class="action-link btn-green"
-                        onclick="openConfirm('suspend_user', <?= $user['user_id'] ?>, 'Suspend <?= htmlspecialchars(addslashes($user['email'])) ?>?', 'This account will be suspended and they won\'t be able to log in.', 'Suspend', 'warning')">Suspend</button>
-                <button type="button" class="action-link btn-red"
-                        onclick="openConfirm('dismiss_report', <?= $user['user_id'] ?>, 'Dismiss report against <?= htmlspecialchars(addslashes($user['email'])) ?>?', 'All open reports against this user will be marked as resolved.', 'Dismiss', 'secondary')">Dismiss</button>
+                        onclick="new bootstrap.Modal(document.getElementById('userViewModal<?= $idx ?>')).show()">View</button>
 
               <?php else: ?>
-                <a href="/pages/profile.php?id=<?= $user['user_id'] ?>" class="action-link">View</a>
-                <button type="button" class="action-link btn-green"
-                        onclick="openConfirm('suspend_user', <?= $user['user_id'] ?>, 'Suspend <?= htmlspecialchars(addslashes($user['email'])) ?>?', 'This account will be suspended and they won\'t be able to log in.', 'Suspend', 'warning')">Suspend</button>
-                <button type="button" class="action-link btn-red"
-                        onclick="openConfirm('remove_user', <?= $user['user_id'] ?>, 'Remove <?= htmlspecialchars(addslashes($user['email'])) ?>?', 'This will permanently delete the account and remove it from all the projects.', 'Remove', 'danger')">Remove</button>
+                <button type="button" class="action-link"
+                        onclick="new bootstrap.Modal(document.getElementById('userActiveModal<?= $idx ?>')).show()">View</button>
               <?php endif; ?>
 
             </div>
           </div>
 
-          <?php if ($user['report_count'] > 0 && isset($userReports[$user['user_id']])): ?>
-          <div class="modal fade" id="reportModal<?= $idx ?>" tabindex="-1">
-            <div class="modal-dialog modal-dialog-centered">
-              <div class="modal-content p-3">
-                <h5 class="modal-title mb-2">Reports against <?= htmlspecialchars($user['email']) ?></h5>
-                <hr>
-                <?php foreach ($userReports[$user['user_id']] as $ur): ?>
-                  <p><strong>Reason:</strong> <?= htmlspecialchars($ur['reason']) ?></p>
-                  <p><strong>Reported by:</strong> <?= htmlspecialchars($ur['reporter_email']) ?></p>
-                  <p><strong>Date:</strong> <?= htmlspecialchars($ur['created_at']) ?></p>
-                  <hr>
-                <?php endforeach; ?>
-                <div class="d-flex justify-content-between gap-2 mt-2">
-                  <form method="POST" action="/pages/admin.php">
-                    <input type="hidden" name="user_id" value="<?= $user['user_id'] ?>">
-                    <button type="submit" name="suspend_user" class="btn btn-warning">Suspend User</button>
-                  </form>
-                  <form method="POST" action="/pages/admin.php">
-                    <input type="hidden" name="user_id" value="<?= $user['user_id'] ?>">
-                    <button type="submit" name="dismiss_report" class="btn btn-secondary">Dismiss Report</button>
-                  </form>
-                  <button class="btn btn-link" data-bs-dismiss="modal">Close</button>
+          <?php if ($user['report_count'] > 0): ?>
+          <?php
+            $firstReport   = isset($userReports[$user['user_id']]) ? $userReports[$user['user_id']][0] : null;
+            $firstReportId = $firstReport ? $firstReport['report_id'] : 0;
+            $uProjects     = $reportedUserProjects[$user['user_id']] ?? [];
+            $uConvKey      = $user['user_id'] . '_' . ($firstReport['reporter_id'] ?? 0);
+            $uConvs        = $reportedUserConversations[$uConvKey] ?? [];
+            $userConvs     = $chatLogs[$user['user_id']] ?? [];
+          ?>
+          <div class="modal fade" id="userViewModal<?= $idx ?>" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+              <div class="modal-content" style="border-radius:14px; overflow:hidden; border:none;">
+
+                <!-- Header -->
+                <div style="background:#57673E; padding:16px 20px; display:flex; justify-content:space-between; align-items:center;">
+                  <div>
+                    <div style="color:#FCF9F2; font-weight:600; font-size:1rem;"><?= htmlspecialchars(explode('@', $user['email'])[0]) ?></div>
+                    <div style="color:#c8d4b0; font-size:0.78rem;"><?= htmlspecialchars($user['email']) ?></div>
+                  </div>
+                  <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
+
+                <div style="padding:18px 20px; max-height:75vh; overflow-y:auto;">
+
+                  <!-- Reports -->
+                  <?php if ($firstReport && isset($userReports[$user['user_id']])): ?>
+                  <div style="margin-bottom:16px;">
+                    <div style="font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#444; margin-bottom:8px;">Reports</div>
+                    <?php foreach ($userReports[$user['user_id']] as $ur): ?>
+                    <div style="background:#fff8f0; border-left:3px solid #e07b00; border-radius:6px; padding:8px 12px; margin-bottom:6px; font-size:0.83rem;">
+                      <span style="font-weight:600;"><?= htmlspecialchars($ur['reason']) ?></span>
+                      <span style="color:#555; margin-left:8px;">by <?= htmlspecialchars($ur['reporter_email']) ?> · <?= fmtDate($ur['created_at']) ?></span>
+                    </div>
+                    <?php endforeach; ?>
+                  </div>
+                  <?php endif; ?>
+
+                  <!-- Chat Logs -->
+                  <div style="margin-bottom:16px;">
+                    <div style="font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#444; margin-bottom:8px;">Chat Logs</div>
+                    <?php if (empty($userConvs)): ?>
+                      <p style="color:#bbb; font-size:0.83rem; margin:0;">No conversations.</p>
+                    <?php else: ?>
+                      <select class="form-select form-select-sm mb-2" onchange="showChatLog(this, 'chatpanel_<?= $idx ?>')">
+                        <option value="">Select a conversation...</option>
+                        <?php foreach ($userConvs as $ci => $conv): ?>
+                          <?php $label = $conv['type'] === 'project' ? 'Project: ' . ($conv['project_title'] ?? 'Unknown') : 'Private: ' . explode('@', $conv['other_email'] ?? 'unknown')[0]; ?>
+                          <option value="chatconv_<?= $idx ?>_<?= $ci ?>"><?= htmlspecialchars($label) ?></option>
+                        <?php endforeach; ?>
+                      </select>
+                      <div id="chatpanel_<?= $idx ?>">
+                        <?php foreach ($userConvs as $ci => $conv): ?>
+                          <div id="chatconv_<?= $idx ?>_<?= $ci ?>" style="display:none;">
+                            <?php if (empty($conv['messages'])): ?>
+                              <p style="color:#bbb; font-size:0.8rem; margin:0;">No messages.</p>
+                            <?php else: ?>
+                              <div style="max-height:200px; overflow-y:auto; display:flex; flex-direction:column; gap:5px; background:#f7f5ef; border-radius:8px; padding:8px;">
+                                <?php foreach ($conv['messages'] as $msg): ?>
+                                  <?php $isSender = ($msg['sender_email'] === $user['email']); ?>
+                                  <div style="display:flex; flex-direction:column; align-items:<?= $isSender ? 'flex-end' : 'flex-start' ?>;">
+                                    <span style="font-size:0.67rem; color:#aaa; margin-bottom:2px;"><?= htmlspecialchars(explode('@', $msg['sender_email'])[0]) ?> · <?= date('d-m-Y H:i', strtotime($msg['sent_at'])) ?></span>
+                                    <div style="background:<?= $isSender ? '#57673E' : '#e8e6df' ?>; color:<?= $isSender ? '#FCF9F2' : '#333' ?>; border-radius:10px; padding:5px 11px; max-width:75%; font-size:0.83rem; word-break:break-word;"><?= htmlspecialchars($msg['content']) ?></div>
+                                  </div>
+                                <?php endforeach; ?>
+                              </div>
+                            <?php endif; ?>
+                          </div>
+                        <?php endforeach; ?>
+                      </div>
+                    <?php endif; ?>
+                  </div>
+
+                  <!-- Resolve -->
+                  <div>
+                    <div style="font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#444; margin-bottom:8px;">Resolve</div>
+                    <div class="d-flex flex-column gap-2">
+                      <?php if (!empty($uProjects)): ?>
+                      <form method="POST" action="/pages/admin.php" class="d-flex gap-2 align-items-center">
+                        <input type="hidden" name="report_id" value="<?= $firstReportId ?>">
+                        <input type="hidden" name="reported_user_id" value="<?= $user['user_id'] ?>">
+                        <select name="remove_project_id" class="form-select form-select-sm" required>
+                          <option value="" disabled selected>Pick a project...</option>
+                          <?php foreach ($uProjects as $up): ?>
+                            <option value="<?= $up['project_id'] ?>"><?= htmlspecialchars($up['title']) ?></option>
+                          <?php endforeach; ?>
+                        </select>
+                        <button type="submit" name="resolve_remove" class="btn btn-danger btn-sm text-nowrap" style="min-width:160px;">Remove from Project</button>
+                      </form>
+                      <?php else: ?>
+                      <p style="font-size:0.8rem; color:#bbb; margin:0;">User is not in any projects.</p>
+                      <?php endif; ?>
+                      <?php if (!empty($uConvs)): ?>
+                      <form method="POST" action="/pages/admin.php" class="d-flex gap-2 align-items-center">
+                        <input type="hidden" name="report_id" value="<?= $firstReportId ?>">
+                        <input type="hidden" name="reported_user_id" value="<?= $user['user_id'] ?>">
+                        <select name="remove_conversation_id" class="form-select form-select-sm" required>
+                          <option value="" disabled selected>Pick a conversation...</option>
+                          <?php foreach ($uConvs as $sc): ?>
+                            <option value="<?= $sc['conversation_id'] ?>"><?= htmlspecialchars($sc['label']) ?></option>
+                          <?php endforeach; ?>
+                        </select>
+                        <button type="submit" name="resolve_remove_chat" class="btn btn-danger btn-sm text-nowrap" style="min-width:160px;">Remove from Chat</button>
+                      </form>
+                      <?php else: ?>
+                      <p style="font-size:0.8rem; color:#bbb; margin:0;">No shared conversations found.</p>
+                      <?php endif; ?>
+                      <?php if (!empty($userReports[$user['user_id']])): ?>
+                      <button type="button" class="btn btn-sm w-100" style="background:#57673E; color:#fff; border:none; margin-top:10px;"
+                              data-bs-toggle="modal" data-bs-target="#dismissReportModal<?= $idx ?>">Dismiss Report</button>
+                      <?php endif; ?>
+                    </div>
+                  </div>
+
+                  <!-- Past Reports -->
+                  <div style="margin-top:16px;">
+                    <div style="font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#444; margin-bottom:8px;">Past Reports</div>
+                    <?php $uPastReports = $pastReports[$user['user_id']] ?? []; ?>
+                    <?php if (empty($uPastReports)): ?>
+                      <p style="font-size:0.8rem; color:#bbb; margin:0;">No past reports.</p>
+                    <?php else: ?>
+                      <div style="display:flex; flex-direction:column; gap:6px;">
+                        <?php foreach ($uPastReports as $pr): ?>
+                          <div style="background:#f7f5ef; border-radius:8px; padding:8px 12px; font-size:0.82rem;">
+                            <div style="color:#888; font-size:0.72rem; margin-bottom:2px;"><?= fmtDate($pr['created_at']) ?> · by <?= htmlspecialchars(explode('@', $pr['reporter_email'])[0]) ?></div>
+                            <div><?= htmlspecialchars($pr['reason']) ?></div>
+                          </div>
+                        <?php endforeach; ?>
+                      </div>
+                    <?php endif; ?>
+                  </div>
+
+                </div>
+
+                <!-- Footer -->
+                <div style="padding:12px 20px; border-top:1px solid #eee; display:flex; justify-content:space-between; align-items:center; background:#fafafa;">
+                  <a href="/pages/profile.php?id=<?= $user['user_id'] ?>" class="btn btn-sm" style="background:#57673E; color:#fff; border:none;">View Profile</a>
+                  <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-warning btn-sm" data-bs-dismiss="modal"
+                            onclick="openConfirm('suspend_user', <?= $user['user_id'] ?>, 'Suspend <?= htmlspecialchars(addslashes($user['email'])) ?>?', 'This account will be suspended.', 'Suspend', 'warning')">Suspend</button>
+                    <button class="btn btn-sm" style="background:#8a9b6e; color:#fff; border:none;" data-bs-dismiss="modal">Close</button>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+          <?php endif; ?>
+
+          <?php if ($user['report_count'] > 0 && !empty($userReports[$user['user_id']])): ?>
+          <div class="modal fade" id="dismissReportModal<?= $idx ?>" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+              <div class="modal-content" style="border-radius:14px; overflow:hidden; border:none;">
+                <div style="background:#57673E; padding:14px 20px; display:flex; justify-content:space-between; align-items:center;">
+                  <div style="color:#FCF9F2; font-weight:600; font-size:0.95rem;">Dismiss Report</div>
+                  <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST" action="/pages/admin.php">
+                  <div style="padding:18px 20px;">
+                    <p style="font-size:0.88rem; color:#555; margin-bottom:12px;">Select which report to dismiss:</p>
+                    <select name="report_id" class="form-select form-select-sm" required>
+                      <option value="" disabled selected>Pick a report...</option>
+                      <?php foreach ($userReports[$user['user_id']] as $dr): ?>
+                        <option value="<?= $dr['report_id'] ?>">
+                          <?= htmlspecialchars($dr['reason']) ?> — by <?= htmlspecialchars(explode('@', $dr['reporter_email'])[0]) ?> · <?= fmtDate($dr['created_at']) ?>
+                        </option>
+                      <?php endforeach; ?>
+                    </select>
+                  </div>
+                  <div style="padding:12px 20px; border-top:1px solid #eee; display:flex; justify-content:flex-end; gap:10px; background:#fafafa;">
+                    <button type="button" class="btn btn-sm" style="background:#8a9b6e; color:#fff; border:none; border-radius:20px; padding:6px 18px;" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" name="resolve_keep" class="btn btn-sm" style="background:#57673E; color:#fff; border:none; border-radius:20px; padding:6px 18px;">Dismiss</button>
+                  </div>
+                </form>
               </div>
             </div>
           </div>
@@ -398,7 +616,7 @@ require_once __DIR__ . '/../includes/header2.php';
                 <h5 class="modal-title mb-2">Appeal from <?= htmlspecialchars(explode('@', $user['email'])[0]) ?></h5>
                 <hr>
                 <p><strong>User:</strong> <?= htmlspecialchars($user['email']) ?></p>
-                <p><strong>Submitted:</strong> <?= htmlspecialchars($ap['created_at']) ?></p>
+                <p><strong>Submitted:</strong> <?= fmtDate($ap['created_at']) ?></p>
                 <p><strong>Message:</strong></p>
                 <p style="background:#f7f5ef; border-radius:8px; padding:10px; font-size:0.9rem;"><?= nl2br(htmlspecialchars($ap['message'])) ?></p>
                 <div class="d-flex justify-content-between gap-2 mt-3">
@@ -413,58 +631,155 @@ require_once __DIR__ . '/../includes/header2.php';
                   </form>
                 </div>
                 <div class="d-flex justify-content-center mt-2">
-                  <button class="btn btn-link" data-bs-dismiss="modal">Close</button>
+                  <button class="btn btn-sm" style="background:#8a9b6e; color:#fff; border:none;" data-bs-dismiss="modal">Close</button>
                 </div>
               </div>
             </div>
           </div>
           <?php endif; ?>
 
-          <?php if ($user['report_count'] > 0): ?>
-          <div class="modal fade" id="chatModal<?= $idx ?>" tabindex="-1">
+          <?php if ($user['report_count'] == 0): ?>
+          <?php
+            $userConvsActive  = $chatLogs[$user['user_id']] ?? [];
+            $activeUserProjects = $reportedUserProjects[$user['user_id']] ?? [];
+          ?>
+          <div class="modal fade" id="userActiveModal<?= $idx ?>" tabindex="-1">
             <div class="modal-dialog modal-dialog-centered modal-lg">
-              <div class="modal-content p-3">
-                <h5 class="modal-title mb-2">Chat Logs — <?= htmlspecialchars(explode('@', $user['email'])[0]) ?></h5>
-                <hr>
-                <?php $userConvs = $chatLogs[$user['user_id']] ?? []; ?>
-                <?php if (empty($userConvs)): ?>
-                  <p style="color:#aaa;">This user has no conversations.</p>
-                <?php else: ?>
-                  <?php foreach ($userConvs as $conv): ?>
-                    <?php
-                      $label = $conv['type'] === 'project'
-                        ? 'Project: ' . ($conv['project_title'] ?? 'Unknown')
-                        : 'Private with ' . explode('@', $conv['other_email'] ?? 'unknown')[0];
-                    ?>
-                    <div style="margin-bottom:14px;">
-                      <div style="font-size:0.82rem; font-weight:600; color:#57673E; margin-bottom:6px;">
-                        <?= htmlspecialchars($label) ?>
-                        <span style="font-weight:400; color:#999; margin-left:6px;"><?= htmlspecialchars($conv['created_at']) ?></span>
+              <div class="modal-content" style="border-radius:14px; overflow:hidden; border:none;">
+
+                <!-- Header -->
+                <div style="background:#57673E; padding:16px 20px; display:flex; justify-content:space-between; align-items:center;">
+                  <div>
+                    <div style="color:#FCF9F2; font-weight:600; font-size:1rem;"><?= htmlspecialchars(explode('@', $user['email'])[0]) ?></div>
+                    <div style="color:#c8d4b0; font-size:0.78rem;"><?= htmlspecialchars($user['email']) ?></div>
+                  </div>
+                  <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div style="padding:18px 20px; max-height:75vh; overflow-y:auto;">
+
+                  <!-- User Info -->
+                  <div style="margin-bottom:16px;">
+                    <div style="font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#444; margin-bottom:8px;">User Info</div>
+                    <div style="background:#f7f5ef; border-radius:8px; padding:10px 14px; font-size:0.85rem;">
+                      <div><strong>Course:</strong> <?= htmlspecialchars($user['course'] ?? '—') ?></div>
+                      <div><strong>Year:</strong> <?= yearLabel($user['year'] ?? 0) ?></div>
+                      <div><strong>Status:</strong>
+                        <?php if ($user['status'] === 'suspended'): ?>
+                          <span class="status-suspended">Suspended</span>
+                        <?php else: ?>
+                          <span class="status-active">Active</span>
+                        <?php endif; ?>
                       </div>
-                      <?php if (empty($conv['messages'])): ?>
-                        <p style="color:#aaa; font-size:0.82rem;">No messages.</p>
-                      <?php else: ?>
-                        <div style="max-height:220px; overflow-y:auto; display:flex; flex-direction:column; gap:6px; background:#f7f5ef; border-radius:8px; padding:10px;">
-                          <?php foreach ($conv['messages'] as $msg): ?>
-                            <?php $isSender = (explode('@', $msg['sender_email'])[0] === explode('@', $user['email'])[0]); ?>
-                            <div style="display:flex; flex-direction:column; align-items:<?= $isSender ? 'flex-end' : 'flex-start' ?>;">
-                              <span style="font-size:0.7rem; color:#888; margin-bottom:2px;">
-                                <?= htmlspecialchars(explode('@', $msg['sender_email'])[0]) ?> · <?= htmlspecialchars($msg['sent_at']) ?>
-                              </span>
-                              <div style="background:<?= $isSender ? '#57673E' : '#e8e6df' ?>; color:<?= $isSender ? '#FCF9F2' : '#222' ?>; border-radius:10px; padding:6px 11px; max-width:75%; font-size:0.85rem; word-break:break-word;">
-                                <?= htmlspecialchars($msg['content']) ?>
+                    </div>
+                  </div>
+
+                  <!-- Chat Logs -->
+                  <div style="margin-bottom:16px;">
+                    <div style="font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#444; margin-bottom:8px;">Chat Logs</div>
+                    <?php if (empty($userConvsActive)): ?>
+                      <p style="color:#bbb; font-size:0.83rem; margin:0;">No conversations.</p>
+                    <?php else: ?>
+                      <select class="form-select form-select-sm mb-2" onchange="showChatLog(this, 'chatpanel_active_<?= $idx ?>')">
+                        <option value="">Select a conversation...</option>
+                        <?php foreach ($userConvsActive as $ci => $conv): ?>
+                          <?php $label = $conv['type'] === 'project' ? 'Project: ' . ($conv['project_title'] ?? 'Unknown') : 'Private: ' . explode('@', $conv['other_email'] ?? 'unknown')[0]; ?>
+                          <option value="chatconv_active_<?= $idx ?>_<?= $ci ?>"><?= htmlspecialchars($label) ?></option>
+                        <?php endforeach; ?>
+                      </select>
+                      <div id="chatpanel_active_<?= $idx ?>">
+                        <?php foreach ($userConvsActive as $ci => $conv): ?>
+                          <div id="chatconv_active_<?= $idx ?>_<?= $ci ?>" style="display:none;">
+                            <?php if (empty($conv['messages'])): ?>
+                              <p style="color:#bbb; font-size:0.8rem; margin:0;">No messages.</p>
+                            <?php else: ?>
+                              <div style="max-height:200px; overflow-y:auto; display:flex; flex-direction:column; gap:5px; background:#f7f5ef; border-radius:8px; padding:8px;">
+                                <?php foreach ($conv['messages'] as $msg): ?>
+                                  <?php $isSender = ($msg['sender_email'] === $user['email']); ?>
+                                  <div style="display:flex; flex-direction:column; align-items:<?= $isSender ? 'flex-end' : 'flex-start' ?>;">
+                                    <span style="font-size:0.67rem; color:#aaa; margin-bottom:2px;"><?= htmlspecialchars(explode('@', $msg['sender_email'])[0]) ?> · <?= date('d-m-Y H:i', strtotime($msg['sent_at'])) ?></span>
+                                    <div style="background:<?= $isSender ? '#57673E' : '#e8e6df' ?>; color:<?= $isSender ? '#FCF9F2' : '#333' ?>; border-radius:10px; padding:5px 11px; max-width:75%; font-size:0.83rem; word-break:break-word;"><?= htmlspecialchars($msg['content']) ?></div>
+                                  </div>
+                                <?php endforeach; ?>
                               </div>
-                            </div>
+                            <?php endif; ?>
+                          </div>
+                        <?php endforeach; ?>
+                      </div>
+                    <?php endif; ?>
+                  </div>
+
+                  <!-- Resolve -->
+                  <div>
+                    <div style="font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#444; margin-bottom:8px;">Resolve</div>
+                    <div class="d-flex flex-column gap-2">
+                      <?php if (!empty($activeUserProjects)): ?>
+                      <form method="POST" action="/pages/admin.php" class="d-flex gap-2 align-items-center">
+                        <input type="hidden" name="reported_user_id" value="<?= $user['user_id'] ?>">
+                        <select name="remove_project_id" class="form-select form-select-sm" required>
+                          <option value="" disabled selected>Pick a project...</option>
+                          <?php foreach ($activeUserProjects as $up): ?>
+                            <option value="<?= $up['project_id'] ?>"><?= htmlspecialchars($up['title']) ?></option>
                           <?php endforeach; ?>
-                        </div>
+                        </select>
+                        <button type="submit" name="resolve_remove" class="btn btn-danger btn-sm text-nowrap" style="min-width:160px;">Remove from Project</button>
+                      </form>
+                      <?php else: ?>
+                      <p style="font-size:0.8rem; color:#bbb; margin:0;">User is not in any projects.</p>
+                      <?php endif; ?>
+                      <?php if (!empty($userConvsActive)): ?>
+                      <form method="POST" action="/pages/admin.php" class="d-flex gap-2 align-items-center">
+                        <input type="hidden" name="reported_user_id" value="<?= $user['user_id'] ?>">
+                        <select name="remove_conversation_id" class="form-select form-select-sm" required>
+                          <option value="" disabled selected>Pick a conversation...</option>
+                          <?php foreach ($userConvsActive as $ac): ?>
+                            <?php $acLabel = $ac['type'] === 'project' ? 'Group: ' . ($ac['project_title'] ?? 'Unknown') : 'Private: ' . explode('@', $ac['other_email'] ?? 'unknown')[0]; ?>
+                            <option value="<?= $ac['conversation_id'] ?>"><?= htmlspecialchars($acLabel) ?></option>
+                          <?php endforeach; ?>
+                        </select>
+                        <button type="submit" name="resolve_remove_chat" class="btn btn-danger btn-sm text-nowrap" style="min-width:160px;">Remove from Chat</button>
+                      </form>
+                      <?php else: ?>
+                      <p style="font-size:0.8rem; color:#bbb; margin:0;">No conversations found.</p>
                       <?php endif; ?>
                     </div>
-                    <hr style="margin:8px 0;">
-                  <?php endforeach; ?>
-                <?php endif; ?>
-                <div class="d-flex justify-content-end mt-2">
-                  <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                  </div>
+
+                  <!-- Past Reports -->
+                  <div style="margin-top:16px;">
+                    <div style="font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#444; margin-bottom:8px;">Past Reports</div>
+                    <?php $uPastReports = $pastReports[$user['user_id']] ?? []; ?>
+                    <?php if (empty($uPastReports)): ?>
+                      <p style="font-size:0.8rem; color:#bbb; margin:0;">No past reports.</p>
+                    <?php else: ?>
+                      <div style="display:flex; flex-direction:column; gap:6px;">
+                        <?php foreach ($uPastReports as $pr): ?>
+                          <div style="background:#f7f5ef; border-radius:8px; padding:8px 12px; font-size:0.82rem;">
+                            <div style="color:#888; font-size:0.72rem; margin-bottom:2px;"><?= fmtDate($pr['created_at']) ?> · by <?= htmlspecialchars(explode('@', $pr['reporter_email'])[0]) ?></div>
+                            <div><?= htmlspecialchars($pr['reason']) ?></div>
+                          </div>
+                        <?php endforeach; ?>
+                      </div>
+                    <?php endif; ?>
+                  </div>
+
                 </div>
+
+                <!-- Footer -->
+                <div style="padding:12px 20px; border-top:1px solid #eee; display:flex; justify-content:space-between; align-items:center; background:#fafafa;">
+                  <a href="/pages/profile.php?id=<?= $user['user_id'] ?>" class="btn btn-sm" style="background:#57673E; color:#fff; border:none;">View Profile</a>
+                  <div class="d-flex gap-2">
+                    <?php if ($user['status'] === 'suspended'): ?>
+                    <button type="button" class="btn btn-success btn-sm" data-bs-dismiss="modal"
+                            onclick="openConfirm('reinstate_user', <?= $user['user_id'] ?>, 'Reinstate <?= htmlspecialchars(addslashes($user['email'])) ?>?', 'This will restore their account access.', 'Reinstate', 'success')">Reinstate</button>
+                    <?php else: ?>
+                    <button type="button" class="btn btn-warning btn-sm" data-bs-dismiss="modal"
+                            onclick="openConfirm('suspend_user', <?= $user['user_id'] ?>, 'Suspend <?= htmlspecialchars(addslashes($user['email'])) ?>?', 'This account will be suspended.', 'Suspend', 'warning')">Suspend</button>
+                    <?php endif; ?>
+                    <button class="btn btn-sm" style="background:#8a9b6e; color:#fff; border:none;" data-bs-dismiss="modal">Close</button>
+                  </div>
+                </div>
+
               </div>
             </div>
           </div>
@@ -560,7 +875,7 @@ require_once __DIR__ . '/../includes/header2.php';
               <p><strong>Reported user:</strong> <?= htmlspecialchars($report['reported_email']) ?></p>
               <p><strong>Reported by:</strong> <?= htmlspecialchars($report['reporter_email']) ?></p>
               <p><strong>Reason:</strong> <?= htmlspecialchars($report['reason']) ?></p>
-              <p><strong>Date:</strong> <?= htmlspecialchars($report['created_at']) ?></p>
+              <p><strong>Date:</strong> <?= fmtDate($report['created_at']) ?></p>
               <div class="d-flex justify-content-end mt-3">
                 <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
               </div>
@@ -575,16 +890,44 @@ require_once __DIR__ . '/../includes/header2.php';
               <p style="font-size:0.9rem;">Reported user: <strong><?= htmlspecialchars($report['reported_email']) ?></strong></p>
               <hr>
               <p style="font-size:0.9rem;">Choose an action:</p>
-              <div class="d-flex justify-content-center gap-3 mt-2">
+              <div class="d-flex flex-column gap-2 mt-2">
                 <form method="POST" action="/pages/admin.php">
                   <input type="hidden" name="report_id" value="<?= $report['report_id'] ?>">
-                  <button type="submit" name="resolve_keep" class="btn btn-secondary">Keep User</button>
+                  <button type="submit" name="resolve_keep" class="btn btn-secondary w-100">Keep User</button>
                 </form>
-                <form method="POST" action="/pages/admin.php">
+                <?php $userProjects = $reportedUserProjects[$report['reported_user_id']] ?? []; ?>
+                <?php if (!empty($userProjects)): ?>
+                <form method="POST" action="/pages/admin.php" class="d-flex gap-2 align-items-center">
                   <input type="hidden" name="report_id" value="<?= $report['report_id'] ?>">
                   <input type="hidden" name="reported_user_id" value="<?= $report['reported_user_id'] ?>">
-                  <button type="submit" name="resolve_remove" class="btn btn-danger">Remove from Projects</button>
+                  <select name="remove_project_id" class="form-select form-select-sm" required>
+                    <option value="" disabled selected>Pick a project...</option>
+                    <?php foreach ($userProjects as $up): ?>
+                      <option value="<?= $up['project_id'] ?>"><?= htmlspecialchars($up['title']) ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                  <button type="submit" name="resolve_remove" class="btn btn-warning btn-sm text-nowrap">Remove</button>
                 </form>
+                <?php else: ?>
+                <p style="font-size:0.85rem; color:#999;">User is not in any projects.</p>
+                <?php endif; ?>
+                <?php $convKey = $report['reported_user_id'] . '_' . ($report['reporter_id'] ?? 0);
+                      $sharedConvs = $reportedUserConversations[$convKey] ?? []; ?>
+                <?php if (!empty($sharedConvs)): ?>
+                <form method="POST" action="/pages/admin.php" class="d-flex gap-2 align-items-center">
+                  <input type="hidden" name="report_id" value="<?= $report['report_id'] ?>">
+                  <input type="hidden" name="reported_user_id" value="<?= $report['reported_user_id'] ?>">
+                  <select name="remove_conversation_id" class="form-select form-select-sm" required>
+                    <option value="" disabled selected>Pick a conversation...</option>
+                    <?php foreach ($sharedConvs as $sc): ?>
+                      <option value="<?= $sc['conversation_id'] ?>"><?= htmlspecialchars($sc['label']) ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                  <button type="submit" name="resolve_remove_chat" class="btn btn-danger btn-sm text-nowrap">Remove</button>
+                </form>
+                <?php else: ?>
+                <p style="font-size:0.85rem; color:#999;">No shared conversations found.</p>
+                <?php endif; ?>
               </div>
               <div class="d-flex justify-content-center mt-3">
                 <button class="btn btn-link" data-bs-dismiss="modal">Cancel</button>
@@ -619,7 +962,7 @@ require_once __DIR__ . '/../includes/header2.php';
               <p><strong>Description:</strong> <?= htmlspecialchars($pr['project_description'] ?? '—') ?></p>
               <p><strong>Reported by:</strong> <?= htmlspecialchars($pr['reporter_email']) ?></p>
               <p><strong>Reason:</strong> <?= htmlspecialchars($pr['reason']) ?></p>
-              <p><strong>Date:</strong> <?= htmlspecialchars($pr['created_at']) ?></p>
+              <p><strong>Date:</strong> <?= fmtDate($pr['created_at']) ?></p>
               <div class="d-flex justify-content-end mt-3">
                 <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
               </div>
@@ -676,7 +1019,7 @@ require_once __DIR__ . '/../includes/header2.php';
               <hr>
               <p><strong>Reported by:</strong> <?= htmlspecialchars($gr['reporter_email']) ?></p>
               <p><strong>Reason:</strong> <?= htmlspecialchars($gr['reason']) ?></p>
-              <p><strong>Date:</strong> <?= htmlspecialchars($gr['created_at']) ?></p>
+              <p><strong>Date:</strong> <?= fmtDate($gr['created_at']) ?></p>
               <div class="d-flex justify-content-end mt-3">
                 <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
               </div>
@@ -720,8 +1063,8 @@ require_once __DIR__ . '/../includes/header2.php';
         <input type="hidden" name="user_id" id="confirmUserId">
         <input type="hidden" name="" id="confirmAction">
         <div class="d-flex justify-content-center gap-3 mt-3">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn" id="confirmSubmitBtn"></button>
+          <button type="button" class="btn btn-sm" style="background:#57673E; color:#fff; border:none;" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-sm" id="confirmSubmitBtn"></button>
         </div>
       </form>
     </div>
@@ -768,6 +1111,16 @@ function openProjectConfirm(projectId, title) {
     document.getElementById('confirmProjectTitle').textContent = 'Remove "' + title + '"?';
     document.getElementById('confirmProjectId').value = projectId;
     new bootstrap.Modal(document.getElementById('confirmProjectModal')).show();
+}
+
+function showChatLog(select, panelId) {
+    const panel = document.getElementById(panelId);
+    if (!panel) return;
+    panel.querySelectorAll('[id^="chatconv_"]').forEach(el => el.style.display = 'none');
+    if (select.value) {
+        const target = document.getElementById(select.value);
+        if (target) target.style.display = 'block';
+    }
 }
 </script>
 

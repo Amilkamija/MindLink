@@ -17,7 +17,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $security_question = $_POST['security_question'] ?? '';
     $security_answer = trim($_POST['security_answer'] ?? '');
 
-    if (strlen($password) < 8 || !preg_match('/[^a-zA-Z0-9]/', $password)) {
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $error = "Please enter a valid email address.";
+    } elseif (strlen($password) < 8 || !preg_match('/[^a-zA-Z0-9]/', $password)) {
         $error = "Password must be at least 8 characters and include at least 1 special character.";
     } elseif ($password !== $confirm_password) {
         $error = "Passwords do not match!";
@@ -32,9 +34,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->store_result();
 
         if ($stmt->num_rows > 0) {
-            $error = "An account with that email already exists!";
+            $error = "Unable to create an account. Please check your details and try again.";
         } else {
-            $stmt->close();
             $password_hash = password_hash($password, PASSWORD_DEFAULT);
             $answer_hash = password_hash(strtolower($security_answer), PASSWORD_DEFAULT);
 
