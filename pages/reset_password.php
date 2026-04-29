@@ -6,6 +6,7 @@ $success = '';
 $error   = '';
 $token   = trim($_GET['token'] ?? '');
 
+// Validate the token: must exist, be unused, and be less than 1 hour old
 $valid_token = false;
 if ($token !== '') {
     $stmt = $conn->prepare(
@@ -42,6 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $valid_token) {
         $stmt->execute();
         $stmt->close();
 
+        // Mark token as used so the same link can't be reused
         $stmt = $conn->prepare("UPDATE PasswordResets SET used = 1 WHERE reset_id = ?");
         $stmt->bind_param("i", $reset_id);
         $stmt->execute();
