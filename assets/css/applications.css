@@ -43,7 +43,7 @@ body {
   color: var(--text-color);
 }
 
-.content-area {
+.applications-page .content-area {
   padding: 20px 34px 36px 12px;
   max-width: none;
   width: calc(100% - 12px);
