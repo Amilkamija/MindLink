@@ -210,12 +210,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $can_apply) {
 
                 $insert_stmt->bind_param("iiis", $project_id, $selected_role_id, $current_user_id, $application_message);
 
-                if ($insert_stmt->execute()) {
-                    $success = "Your application has been submitted successfully.";
-                } else {
-                    $error = "Failed to submit application. Please try again.";
-                    $can_apply = false;
-                }
+               if ($insert_stmt->execute()) {
+    $application_id = $conn->insert_id;
+
+    $created_at = (new DateTime('now', new DateTimeZone('Europe/Dublin')))->format('Y-m-d H:i:s');
+
+$notif_sql = "
+    INSERT INTO Notifications (user_id, project_id, application_id, type, message, created_at)
+    VALUES (?, ?, ?, 'new_application', ?, ?)
+";
+
+$notif_message = "You received a new application for \"" . $project['title'] . "\".";
+$owner_id = (int)$project['owner_id'];
+
+$notif_stmt = $conn->prepare($notif_sql);
+if ($notif_stmt) {
+    $notif_stmt->bind_param("iiiss", $owner_id, $project_id, $application_id, $notif_message, $created_at);
+    $notif_stmt->execute();
+    $notif_stmt->close();
+}
+                   
+    $success = "Your application has been submitted successfully.";
+} else {
+    $error = "Failed to submit application. Please try again.";
+    $can_apply = false;
+}
 
                 $insert_stmt->close();
             }
