@@ -217,6 +217,10 @@ function shortText($text, $length = 140) {
                             Apply
                         </a>
                     <?php endif; ?>
+
+                    <?php if ($current_user_id && (int)$current_user_id !== (int)$project['owner_id']): ?>
+                        <a href="/pages/report.php?project_id=<?php echo (int)$project['project_id']; ?>" class="details-btn" style="font-size:0.82rem; font-weight:500; color:#c0392b; border-color:#e8c4c0;">Report</a>
+                    <?php endif; ?>
                 </div>
             </div>
 

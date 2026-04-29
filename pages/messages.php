@@ -1,12 +1,8 @@
-<?php
+<?php 
 /**
  * @file messages.php
  * @brief MindLink – secure and dynamic messaging page
  */
-
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
 
 $pageTitle = "Messages - MindLink";
 $extra_css = '/assets/css/messages.css';
@@ -19,16 +15,27 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
+date_default_timezone_set('Europe/Dublin');
+
 $currentUserId = (int)($_SESSION['user_id'] ?? 0);
 $selectedConversationId = isset($_GET['conversation_id']) ? (int)$_GET['conversation_id'] : 0;
 $targetUserId = isset($_GET['user_id']) ? (int)$_GET['user_id'] : 0;
 $searchTerm = trim($_GET['search'] ?? '');
+
+$filter = $_GET['filter'] ?? 'all';
+$allowedFilters = ['all', 'unread', 'groups'];
+
+if (!in_array($filter, $allowedFilters, true)) {
+    $filter = 'all';
+}
+
 $errorMessage = '';
 $infoMessage = '';
 
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
+
 $csrfToken = $_SESSION['csrf_token'];
 
 define('PROFILE_PICTURE_BASE', '/uploads/profile_pictures/');
@@ -46,7 +53,6 @@ function buildProfilePictureUrl($f) {
     $f = trim((string)$f);
     if ($f === '') return '';
 
-    // PHP 7+ compatible instead of str_starts_with()
     if (
         strpos($f, '/') === 0 ||
         strpos($f, 'http://') === 0 ||
@@ -87,6 +93,20 @@ function pageExists($filename) {
     return file_exists(__DIR__ . '/' . ltrim($filename, '/'));
 }
 
+function containsPhoneNumber($text) {
+    return preg_match('/(\+?\d[\d\s\-\(\)]{7,}\d)/', $text);
+}
+
+function jsonResponse($data) {
+    if (ob_get_length()) {
+        ob_clean();
+    }
+
+    header('Content-Type: application/json');
+    echo json_encode($data);
+    exit();
+}
+
 function getOrCreatePrivateConversation(mysqli $conn, int $currentUserId, int $targetUserId): int {
     if ($currentUserId <= 0 || $targetUserId <= 0 || $currentUserId === $targetUserId) {
         return 0;
@@ -102,6 +122,7 @@ function getOrCreatePrivateConversation(mysqli $conn, int $currentUserId, int $t
           AND cp2.user_id = ?
         LIMIT 1
     ";
+
     $findStmt = $conn->prepare($findSql);
     if (!$findStmt) {
         return 0;
@@ -160,6 +181,7 @@ function getOrCreatePrivateConversation(mysqli $conn, int $currentUserId, int $t
 /* ---------- Check current user status ---------- */
 $currentUserStatus = 'active';
 $statusStmt = $conn->prepare("SELECT status FROM Users WHERE user_id = ? LIMIT 1");
+
 if ($statusStmt) {
     $statusStmt->bind_param("i", $currentUserId);
     $statusStmt->execute();
@@ -168,6 +190,7 @@ if ($statusStmt) {
     $currentUserStatus = normalizeUserStatus($statusRow['status'] ?? 'active');
     $statusStmt->close();
 }
+
 $isBlocked = in_array($currentUserStatus, ['suspended', 'reported', 'under_review', 'blocked'], true);
 
 /* ---------- Auto-open/create DM from matches/profile ---------- */
@@ -176,6 +199,7 @@ if ($selectedConversationId <= 0 && $targetUserId > 0) {
         $errorMessage = "You cannot start a direct message with yourself.";
     } else {
         $targetCheck = $conn->prepare("SELECT user_id, status FROM Users WHERE user_id = ? LIMIT 1");
+
         if ($targetCheck) {
             $targetCheck->bind_param("i", $targetUserId);
             $targetCheck->execute();
@@ -206,6 +230,7 @@ if ($selectedConversationId <= 0 && $targetUserId > 0) {
 
 /* ---------- Handle sending ---------- */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['conversation_id'])) {
+    $isAjax = !empty($_POST['ajax']);
     $postedToken = $_POST['csrf_token'] ?? '';
     $conversationId = (int)($_POST['conversation_id'] ?? 0);
     $text = trim((string)($_POST['message'] ?? ''));
@@ -218,6 +243,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['conversation_id'])) {
         $errorMessage = "Invalid conversation.";
     } elseif ($text === '') {
         $errorMessage = "Message cannot be empty.";
+    } elseif (containsPhoneNumber($text)) {
+        $errorMessage = "Phone numbers are not allowed in chat messages.";
     } else {
         $text = mb_substr($text, 0, 2000);
 
@@ -279,7 +306,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['conversation_id'])) {
                         $insertStmt->execute();
                         $insertStmt->close();
 
-                        header("Location: /pages/messages.php?conversation_id=" . $conversationId . ($searchTerm !== '' ? '&search=' . urlencode($searchTerm) : ''));
+                        if ($isAjax) {
+                            jsonResponse([
+                                'success' => true,
+                                'content' => nl2br(safeText($text)),
+                                'display_time' => 'Just now'
+                            ]);
+                        }
+
+                        $redirectUrl = "/pages/messages.php?conversation_id=" . $conversationId;
+
+                        if ($searchTerm !== '') {
+                            $redirectUrl .= '&search=' . urlencode($searchTerm);
+                        }
+
+                        if ($filter !== 'all') {
+                            $redirectUrl .= '&filter=' . urlencode($filter);
+                        }
+
+                        header("Location: " . $redirectUrl);
                         exit();
                     } else {
                         $errorMessage = "Could not send your message right now.";
@@ -291,6 +336,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['conversation_id'])) {
         } else {
             $errorMessage = "Could not verify conversation access.";
         }
+    }
+
+    if ($isAjax && $errorMessage !== '') {
+        jsonResponse([
+            'success' => false,
+            'message' => $errorMessage
+        ]);
     }
 }
 
@@ -333,6 +385,7 @@ $sql = "
 ";
 
 $stmt = $conn->prepare($sql);
+
 if ($stmt) {
     $stmt->bind_param("iii", $currentUserId, $currentUserId, $currentUserId);
     $stmt->execute();
@@ -340,7 +393,18 @@ if ($stmt) {
     $stmt->close();
 }
 
-/* ---------- Filter sidebar conversations by project or username ---------- */
+/* ---------- Filter tabs ---------- */
+if ($filter === 'groups') {
+    $conversations = array_filter($conversations, function ($conv) {
+        return normalizeConversationType($conv['type'] ?? 'private') === 'project';
+    });
+}
+
+if ($filter === 'unread') {
+    $conversations = [];
+}
+
+/* ---------- Search filter ---------- */
 if ($searchTerm !== '') {
     $needle = mb_strtolower($searchTerm);
 
@@ -410,6 +474,7 @@ if ($selectedConversationId > 0) {
                 $subtitle = 'Project Group';
 
                 $projectStatus = strtolower(trim((string)($info['project_status'] ?? '')));
+
                 if (in_array($projectStatus, ['suspended', 'reported', 'under_review', 'blocked'], true)) {
                     $infoMessage = "This project conversation is currently restricted.";
                     $canSendInConversation = false;
@@ -441,6 +506,7 @@ if ($selectedConversationId > 0) {
                         $subtitle = 'Direct Message';
 
                         $otherStatus = normalizeUserStatus($u['status'] ?? 'active');
+
                         if (in_array($otherStatus, ['suspended', 'reported', 'under_review', 'blocked'], true)) {
                             $infoMessage = "This user is currently restricted.";
                             $canSendInConversation = false;
@@ -483,6 +549,9 @@ if ($selectedConversationId > 0) {
             <?php if ($selectedConversationId > 0): ?>
                 <input type="hidden" name="conversation_id" value="<?php echo (int)$selectedConversationId; ?>">
             <?php endif; ?>
+
+            <input type="hidden" name="filter" value="<?php echo safeText($filter); ?>">
+
             <input
                 type="text"
                 name="search"
@@ -491,17 +560,46 @@ if ($selectedConversationId > 0) {
             >
         </form>
 
+        <div class="chat-filter-tabs">
+            <a href="/pages/messages.php?filter=all<?php echo $searchTerm !== '' ? '&search=' . urlencode($searchTerm) : ''; ?>"
+               class="filter-tab <?php echo $filter === 'all' ? 'active-filter' : ''; ?>">
+                All
+            </a>
+
+            <a href="/pages/messages.php?filter=unread<?php echo $searchTerm !== '' ? '&search=' . urlencode($searchTerm) : ''; ?>"
+               class="filter-tab <?php echo $filter === 'unread' ? 'active-filter' : ''; ?>">
+                Unread
+            </a>
+
+            <a href="/pages/messages.php?filter=groups<?php echo $searchTerm !== '' ? '&search=' . urlencode($searchTerm) : ''; ?>"
+               class="filter-tab <?php echo $filter === 'groups' ? 'active-filter' : ''; ?>">
+                Groups
+            </a>
+        </div>
+
         <div class="section-label">Conversations</div>
 
         <?php if ($conversations): ?>
             <?php foreach ($conversations as $c): ?>
                 <?php
                 $convType = normalizeConversationType($c['type'] ?? 'private');
+
                 $displayName = $convType === 'project'
                     ? ($c['project_title'] ?: 'Project')
                     : displayUserLabel($c['other_user_email'] ?? '');
+
+                $conversationUrl = "/pages/messages.php?conversation_id=" . (int)$c['conversation_id'];
+
+                if ($searchTerm !== '') {
+                    $conversationUrl .= '&search=' . urlencode($searchTerm);
+                }
+
+                if ($filter !== 'all') {
+                    $conversationUrl .= '&filter=' . urlencode($filter);
+                }
                 ?>
-                <a href="/pages/messages.php?conversation_id=<?php echo (int)$c['conversation_id']; ?><?php echo ($searchTerm !== '' ? '&search=' . urlencode($searchTerm) : ''); ?>"
+
+                <a href="<?php echo safeText($conversationUrl); ?>"
                    class="chat-item <?php echo ($selectedConversationId == $c['conversation_id']) ? 'active-chat' : ''; ?>">
                     <div class="chat-item-content">
                         <div class="chat-name"><?php echo safeText($displayName); ?></div>
@@ -514,7 +612,15 @@ if ($selectedConversationId > 0) {
         <?php else: ?>
             <div class="empty-panel-card">
                 <p>
-                    <?php echo $searchTerm !== '' ? 'No matches for "' . safeText($searchTerm) . '"' : 'No conversations found.'; ?>
+                    <?php
+                    if ($filter === 'unread') {
+                        echo 'Unread message tracking is not available yet.';
+                    } elseif ($searchTerm !== '') {
+                        echo 'No matches for "' . safeText($searchTerm) . '"';
+                    } else {
+                        echo 'No conversations found.';
+                    }
+                    ?>
                 </p>
             </div>
         <?php endif; ?>
@@ -561,6 +667,7 @@ if ($selectedConversationId > 0) {
                 <?php if ($messages): ?>
                     <?php foreach ($messages as $msg): ?>
                         <?php $mine = (int)$msg['sender_id'] === $currentUserId; ?>
+
                         <div class="message-row <?php echo $mine ? 'message-right' : 'message-left'; ?>">
                             <?php if (!$mine): ?>
                                 <div class="avatar-name"><?php echo safeText(displayUserLabel($msg['email'])); ?></div>
@@ -585,10 +692,19 @@ if ($selectedConversationId > 0) {
                 <?php elseif (!$canSendInConversation): ?>
                     <div class="alert alert-warning">You cannot send messages in this conversation right now.</div>
                 <?php else: ?>
-                    <form class="message-input-wrap" method="POST">
+                    <form class="message-input-wrap" method="POST" id="messageForm">
                         <input type="hidden" name="csrf_token" value="<?php echo safeText($csrfToken); ?>">
                         <input type="hidden" name="conversation_id" value="<?php echo (int)$selectedConversationId; ?>">
-                        <input type="text" name="message" placeholder="Type a message..." maxlength="2000" required>
+
+                        <input
+                            type="text"
+                            name="message"
+                            id="messageInput"
+                            placeholder="Type a message..."
+                            maxlength="2000"
+                            required
+                        >
+
                         <button type="submit" class="btn-olive">Send</button>
                     </form>
                 <?php endif; ?>
@@ -596,6 +712,70 @@ if ($selectedConversationId > 0) {
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const form = document.getElementById("messageForm");
+    const input = document.getElementById("messageInput");
+    const thread = document.getElementById("messageThread");
+
+    if (!form || !input || !thread) return;
+
+    thread.scrollTop = thread.scrollHeight;
+
+    form.addEventListener("submit", function (e) {
+        e.preventDefault();
+
+        const message = input.value.trim();
+
+        if (message === "") return;
+
+        const phonePattern = /(\+?\d[\d\s\-\(\)]{7,}\d)/;
+
+        if (phonePattern.test(message)) {
+            alert("Phone numbers are not allowed in chat messages.");
+            return;
+        }
+
+        const formData = new FormData(form);
+        formData.append("ajax", "1");
+
+        fetch("/pages/messages.php", {
+            method: "POST",
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (!data.success) {
+                alert(data.message || "Could not send message.");
+                return;
+            }
+
+            const emptyCard = thread.querySelector(".empty-chat-card");
+            if (emptyCard) {
+                emptyCard.remove();
+            }
+
+            const row = document.createElement("div");
+            row.className = "message-row message-right";
+
+            row.innerHTML = `
+                <div class="message-bubble-wrap">
+                    <div class="message-bubble">${data.content}</div>
+                    <div class="message-meta">${data.display_time}</div>
+                </div>
+            `;
+
+            thread.appendChild(row);
+            input.value = "";
+            thread.scrollTop = thread.scrollHeight;
+        })
+        .catch(() => {
+            alert("Something went wrong. Please try again.");
+        });
+    });
+});
+</script>
 
 <?php
 $conn->close();

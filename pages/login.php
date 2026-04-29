@@ -8,25 +8,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email']);
     $password = $_POST['password'];
 
+    $ip = $_SERVER['REMOTE_ADDR'];
+    define('DB_DATETIME_FMT', 'Y-m-d H:i:s');
+    $window = date(DB_DATETIME_FMT, time() - 1800); // 30-minute window
 
-    $stmt = $conn->prepare("SELECT user_id, email, password_hash, role FROM Users WHERE email = ?");
-    $stmt->bind_param("s", $email);
+    // Check failed attempts for this specific IP + email combination
+    $stmt = $conn->prepare("SELECT COUNT(*) FROM LoginAttempts WHERE ip_address = ? AND email = ? AND attempt_time > ?");
+    $stmt->bind_param("sss", $ip, $email, $window);
     $stmt->execute();
-    $result = $stmt->get_result();
+    $stmt->bind_result($attempt_count);
+    $stmt->fetch();
+    $stmt->close();
 
-    if ($result->num_rows === 1) {
-        $user = $result->fetch_assoc();
+    if ($attempt_count >= 3) {
+        $error = "Too many failed login attempts. Please try again in 30 minutes.";
+    } else {
+        $stmt = $conn->prepare("SELECT user_id, email, password_hash, role FROM Users WHERE email = ?");
+        $stmt->bind_param("s", $email);
+        $stmt->execute();
+        $result = $stmt->get_result();
 
-        if (password_verify($password, $user['password_hash'])) {
-            $_SESSION['user_id'] = $user['user_id'];
-            $_SESSION['role'] = $user['role'];
-            header("Location: /pages/home.php");
-            exit();
+        if ($result->num_rows === 1) {
+            $user = $result->fetch_assoc();
+
+            if (password_verify($password, $user['password_hash'])) {
+                // Clear attempts for this IP + email on successful login
+                $stmt2 = $conn->prepare("DELETE FROM LoginAttempts WHERE ip_address = ? AND email = ?");
+                $stmt2->bind_param("ss", $ip, $email);
+                $stmt2->execute();
+                $stmt2->close();
+
+                $_SESSION['user_id'] = $user['user_id'];
+                $_SESSION['role'] = $user['role'];
+                header("Location: /pages/home.php");
+                exit();
+            } else {
+                $now = date(DB_DATETIME_FMT);
+                $stmt2 = $conn->prepare("INSERT INTO LoginAttempts (ip_address, email, attempt_time) VALUES (?, ?, ?)");
+                $stmt2->bind_param("sss", $ip, $email, $now);
+                $stmt2->execute();
+                $stmt2->close();
+                $error = "Invalid email or password.";
+            }
         } else {
+            $now = date(DB_DATETIME_FMT);
+            $stmt2 = $conn->prepare("INSERT INTO LoginAttempts (ip_address, email, attempt_time) VALUES (?, ?, ?)");
+            $stmt2->bind_param("sss", $ip, $email, $now);
+            $stmt2->execute();
+            $stmt2->close();
             $error = "Invalid email or password.";
         }
-    } else {
-        $error = "Invalid email or password.";
+        $stmt->close();
     }
 }
 ?>
