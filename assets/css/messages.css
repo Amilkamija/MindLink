@@ -1,4 +1,4 @@
-:root {
+:root { 
   --bg-color: #f7f5f0;
   --line-color: #d8d7cb;
 
@@ -88,6 +88,41 @@ body {
 
 .search-box input::placeholder {
   color: var(--text-soft);
+}
+
+.chat-filter-tabs {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 16px;
+  flex-wrap: wrap;
+}
+
+.filter-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: var(--cream);
+  border: 1px solid var(--soft-card-border);
+  color: var(--text-dark);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: 0.2s ease;
+}
+
+.filter-tab:hover {
+  background: var(--olive-soft);
+  border-color: var(--olive);
+  color: var(--text-dark);
+  text-decoration: none;
+}
+
+.active-filter {
+  background: var(--olive);
+  border-color: var(--olive);
+  color: #111;
 }
 
 /* Section Label */
@@ -373,6 +408,19 @@ body {
   display: flex;
   flex-direction: column;
   max-width: 75%;
+  animation: fadeMessage 0.25s ease;
+}
+
+@keyframes fadeMessage {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .message-left {
@@ -410,6 +458,7 @@ body {
   line-height: 1.5;
   word-break: break-word;
   overflow-wrap: anywhere;
+  word-wrap: break-word;
   max-width: 100%;
 }
 
@@ -443,7 +492,8 @@ body {
   padding: 10px 14px;
 }
 
-.message-input-wrap input {
+.message-input-wrap input,
+.message-input-wrap input[type="text"] {
   flex: 1;
   border: none;
   background: transparent;
@@ -451,6 +501,13 @@ body {
   font-size: 0.9rem;
   color: var(--text-dark);
   min-width: 0;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.message-input-wrap input:focus,
+.message-input-wrap input[type="text"]:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(85, 107, 47, 0.15);
 }
 
 .message-input-wrap input::placeholder {
@@ -561,5 +618,15 @@ body {
   .empty-chat-card {
     width: 100%;
     margin: 20px 0 0 0;
+  }
+
+  .chat-filter-tabs {
+    gap: 6px;
+  }
+
+  .filter-tab {
+    flex: 1;
+    padding: 8px 10px;
+    font-size: 0.8rem;
   }
 }
