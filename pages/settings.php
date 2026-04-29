@@ -51,11 +51,7 @@ if ($settings_result->num_rows === 0) {
 $settings_data = $settings_result->fetch_assoc();
 $settings_stmt->close();
 
-/*
-|--------------------------------------------------------------------------
-| Handle POST - Account Information
-|--------------------------------------------------------------------------
-*/
+/* Handle POST - Account Information */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_account'])) {
     $new_email = trim($_POST['email'] ?? '');
     $new_phone = trim($_POST['phone'] ?? '');
@@ -89,11 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_account'])) {
     }
 }
 
-/*
-|--------------------------------------------------------------------------
-| Handle POST - Notification Settings
-|--------------------------------------------------------------------------
-*/
+/* Handle POST - Notification Settings */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_notifications'])) {
     $email_notif = isset($_POST['email_notifications']) ? 1 : 0;
     $push_notif = isset($_POST['push_notifications']) ? 1 : 0;
@@ -114,11 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_notifications'])
     $update_stmt->close();
 }
 
-/*
-|--------------------------------------------------------------------------
-| Handle POST - Privacy Settings
-|--------------------------------------------------------------------------
-*/
+/* Handle POST - Privacy Settings */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_privacy'])) {
     $show_profile = isset($_POST['show_profile']) ? 1 : 0;
     $profile_search = isset($_POST['profile_search']) ? 1 : 0;
