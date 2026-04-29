@@ -75,8 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'], $_POST['app
                     a.project_id,
                     a.role_id,
                     a.status,
-                    p.owner_id,
-                    p.title AS project_title
+                    p.owner_id
                 FROM Applications a
                 JOIN Projects p ON a.project_id = p.project_id
                 WHERE a.application_id = ?
@@ -99,6 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'], $_POST['app
                     $isProjectOwner = ((int) $applicationRow['owner_id'] === $current_user_id);
                     $isApplicant = ((int) $applicationRow['applicant_id'] === $current_user_id);
 
+                    /* Accept Application */
                     if ($action === 'accept' && $isProjectOwner) {
                         $conn->begin_transaction();
 
@@ -179,15 +179,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'], $_POST['app
                                 }
                             }
 
-                            createNotification(
-                                $conn,
-                                (int)$applicationRow['applicant_id'],
-                                (int)$applicationRow['project_id'],
-                                (int)$applicationRow['application_id'],
-                                'application_accepted',
-                                'Your application for "' . $applicationRow['project_title'] . '" was accepted.'
-                            );
-
                             $conn->commit();
                             $success = "Application accepted successfully.";
                         } catch (Exception $e) {
@@ -195,6 +186,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'], $_POST['app
                             $error = "An error occurred while accepting the application. Please try again.";
                         }
 
+                    /* Reject Application */
                     } elseif ($action === 'reject' && $isProjectOwner) {
                         $conn->begin_transaction();
 
@@ -213,15 +205,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'], $_POST['app
                             $rejectStmt->execute();
                             $rejectStmt->close();
 
-                            createNotification(
-                                $conn,
-                                (int)$applicationRow['applicant_id'],
-                                (int)$applicationRow['project_id'],
-                                (int)$applicationRow['application_id'],
-                                'application_rejected',
-                                'Your application for "' . $applicationRow['project_title'] . '" was rejected.'
-                            );
-
                             $conn->commit();
                             $success = "Application rejected.";
                         } catch (Exception $e) {
@@ -229,6 +212,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'], $_POST['app
                             $error = "Could not reject the application. Please try again.";
                         }
 
+                    /* Cancel Application */
                     } elseif ($action === 'cancel' && $isApplicant) {
                         $conn->begin_transaction();
 

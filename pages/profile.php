@@ -10,6 +10,13 @@ if (!isset($_SESSION['user_id'])) {
 $profile_id     = isset($_GET['id']) ? (int)$_GET['id'] : $_SESSION['user_id'];
 $is_own_profile = ($profile_id === $_SESSION['user_id']);
 
+function yearLabel($y) {
+    $map = [1=>'Year 1',2=>'Year 2',3=>'Year 3',4=>'Year 4',5=>'Year 5',6=>'Postgraduate',7=>'Master'];
+    return $map[(int)$y] ?? ($y ? htmlspecialchars((string)$y) : '—');
+}
+
+$yearOptions = [1=>'Year 1',2=>'Year 2',3=>'Year 3',4=>'Year 4',5=>'Year 5',6=>'Postgraduate',7=>'Master'];
+
 $show_welcome = !empty($_COOKIE['first_login']) && $is_own_profile;
 if ($show_welcome) {
     setcookie('first_login', '', time() - 3600, '/');
@@ -312,7 +319,7 @@ function dismissBanner() {
           <?php if ($is_own_profile): ?>
             <div id="details-display">
               <p><strong>Course:</strong> <?= htmlspecialchars($user['course'] ?? '—') ?></p>
-              <p><strong>Year:</strong> <?= htmlspecialchars($user['year'] ?? '—') ?></p>
+              <p><strong>Year:</strong> <?= yearLabel($user['year'] ?? 0) ?></p>
             </div>
             <form id="details-form" method="POST" action="/pages/profile.php" style="display:none;">
               <div class="details-field">
@@ -322,9 +329,9 @@ function dismissBanner() {
               <div class="details-field">
                 <label>Year</label>
                 <select name="year" class="details-input">
-                  <?php for ($y = 1; $y <= 5; $y++): ?>
-                    <option value="<?= $y ?>" <?= ($user['year'] == $y) ? 'selected' : '' ?>>Year <?= $y ?></option>
-                  <?php endfor; ?>
+                  <?php foreach ($yearOptions as $val => $label): ?>
+                    <option value="<?= $val ?>" <?= ($user['year'] == $val) ? 'selected' : '' ?>><?= $label ?></option>
+                  <?php endforeach; ?>
                 </select>
               </div>
               <button type="submit" class="btn-save-aboutme">Save</button>
@@ -332,7 +339,7 @@ function dismissBanner() {
             </form>
           <?php else: ?>
             <p><strong>Course:</strong> <?= htmlspecialchars($user['course'] ?? '—') ?></p>
-            <p><strong>Year:</strong> <?= htmlspecialchars($user['year'] ?? '—') ?></p>
+            <p><strong>Year:</strong> <?= yearLabel($user['year'] ?? 0) ?></p>
           <?php endif; ?>
         </div>
 

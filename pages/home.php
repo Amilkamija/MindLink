@@ -4,6 +4,18 @@ if (!isset($_SESSION['user_id'])) {
     header("Location: /pages/login.php");
     exit();
 }
+require_once __DIR__ . '/../config/db.php';
+
+$isSuspended = false;
+$stmt = $conn->prepare("SELECT status FROM Users WHERE user_id = ? LIMIT 1");
+if ($stmt) {
+    $stmt->bind_param("i", $_SESSION['user_id']);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    $isSuspended = ($row['status'] ?? '') === 'suspended';
+}
+
 $extra_css = '/assets/css/home.css';
 require_once __DIR__ . '/../includes/header2.php';
 ?>
@@ -65,5 +77,30 @@ require_once __DIR__ . '/../includes/header2.php';
         <a href="/pages/matches.php" class="home-card-btn">Explore Connections</a>
     </div>
 </div>
+
+<?php if ($isSuspended): ?>
+<div class="modal fade" id="suspendedModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius:14px; overflow:hidden; border:none;">
+      <div style="background:#c0392b; padding:16px 20px; display:flex; justify-content:space-between; align-items:center;">
+        <div style="color:#fff; font-weight:700; font-size:1rem;">Account Suspended</div>
+      </div>
+      <div style="padding:20px 24px;">
+        <p style="font-size:0.95rem; margin-bottom:12px;">Your account has been suspended. You currently have limited access to MindLink.</p>
+        <p style="font-size:0.95rem; margin-bottom:0;">If you believe this is a mistake, you can submit an appeal and our team will review it.</p>
+      </div>
+      <div style="padding:12px 20px; border-top:1px solid #eee; display:flex; justify-content:space-between; align-items:center; background:#fafafa;">
+        <a href="/pages/report.php" style="background:#57673E; color:#fff; border:none; border-radius:20px; padding:7px 20px; font-size:0.88rem; text-decoration:none;">Go to Appeal</a>
+        <button style="background:#8a9b6e; color:#fff; border:none; border-radius:20px; padding:7px 20px; font-size:0.88rem; cursor:pointer;" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    new bootstrap.Modal(document.getElementById('suspendedModal')).show();
+  });
+</script>
+<?php endif; ?>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

@@ -1,7 +1,4 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
 
 $pageTitle = "Project Details - MindLink";
 $extra_css = '/assets/css/project_details.css';
@@ -81,7 +78,7 @@ function formatDateReadable($dateValue, $fallback = 'Not specified')
         return $fallback;
     }
 
-    return date('d M Y', $timestamp);
+    return date('d-m-Y', $timestamp);
 }
 
 function pageExists($filename)
