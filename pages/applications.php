@@ -42,6 +42,21 @@ function formatDateTime($value) {
     return date('d M Y, H:i', $timestamp);
 }
 
+function createNotification($conn, $user_id, $project_id, $application_id, $type, $message) {
+    $created_at = (new DateTime('now', new DateTimeZone('Europe/Dublin')))->format('Y-m-d H:i:s');
+
+    $stmt = $conn->prepare("
+        INSERT INTO Notifications (user_id, project_id, application_id, type, message, created_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+    ");
+
+    if ($stmt) {
+        $stmt->bind_param("iiisss", $user_id, $project_id, $application_id, $type, $message, $created_at);
+        $stmt->execute();
+        $stmt->close();
+    }
+}
+
 /* 1. Handle actions: accept / reject / cancel */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'], $_POST['application_id'])) {
     $postedToken = $_POST['csrf_token'] ?? '';
