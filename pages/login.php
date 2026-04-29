@@ -8,11 +8,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email']);
     $password = $_POST['password'];
 
+    // track failed attempts per IP + email over a 30-min window
     $ip = $_SERVER['REMOTE_ADDR'];
     define('DB_DATETIME_FMT', 'Y-m-d H:i:s');
-    $window = date(DB_DATETIME_FMT, time() - 1800); // 30-minute window
+    $window = date(DB_DATETIME_FMT, time() - 1800);
 
-    // Check failed attempts for this specific IP + email combination
     $stmt = $conn->prepare("SELECT COUNT(*) FROM LoginAttempts WHERE ip_address = ? AND email = ? AND attempt_time > ?");
     $stmt->bind_param("sss", $ip, $email, $window);
     $stmt->execute();
@@ -32,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $user = $result->fetch_assoc();
 
             if (password_verify($password, $user['password_hash'])) {
-                // Clear attempts for this IP + email on successful login
+                // successful login :clear any recorded attempts for this IP + email
                 $stmt2 = $conn->prepare("DELETE FROM LoginAttempts WHERE ip_address = ? AND email = ?");
                 $stmt2->bind_param("ss", $ip, $email);
                 $stmt2->execute();
@@ -43,6 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 header("Location: /pages/home.php");
                 exit();
             } else {
+                // wrong password :record the failed attempt
                 $now = date(DB_DATETIME_FMT);
                 $stmt2 = $conn->prepare("INSERT INTO LoginAttempts (ip_address, email, attempt_time) VALUES (?, ?, ?)");
                 $stmt2->bind_param("sss", $ip, $email, $now);
@@ -51,6 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = "Invalid email or password.";
             }
         } else {
+            // email not found, still record attempt to prevent email 
             $now = date(DB_DATETIME_FMT);
             $stmt2 = $conn->prepare("INSERT INTO LoginAttempts (ip_address, email, attempt_time) VALUES (?, ?, ?)");
             $stmt2->bind_param("sss", $ip, $email, $now);

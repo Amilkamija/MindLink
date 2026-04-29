@@ -9,13 +9,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name    = trim($_POST['name']);
     $email   = trim($_POST['email']);
     $message = trim($_POST['message']);
-    $user_id = $_SESSION['user_id'] ?? null;
+    $user_id = $_SESSION['user_id'] ?? null; // null for guests
 
     if (empty($name) || empty($email) || empty($message)) {
         $error = "Please fill in all fields.";
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = "Please enter a valid email address.";
     } else {
+        //  user_id links it to an account if logged in
         $stmt = $conn->prepare("INSERT INTO ContactMessages (name, email, message, user_id) VALUES (?, ?, ?, ?)");
         $stmt->bind_param("sssi", $name, $email, $message, $user_id);
         if ($stmt->execute()) {

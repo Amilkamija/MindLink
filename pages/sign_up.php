@@ -17,6 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $security_question = $_POST['security_question'] ?? '';
     $security_answer = trim($_POST['security_answer'] ?? '');
 
+    // Validate email, password strength, match, and security question before touching the DB
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = "Please enter a valid email address.";
     } elseif (strlen($password) < 8 || !preg_match('/[^a-zA-Z0-9]/', $password)) {
@@ -37,6 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = "Unable to create an account. Please check your details and try again.";
         } else {
             $password_hash = password_hash($password, PASSWORD_DEFAULT);
+            // Answer is lowercased before hashing so comparisons are case-insensitive
             $answer_hash = password_hash(strtolower($security_answer), PASSWORD_DEFAULT);
 
             $stmt = $conn->prepare("INSERT INTO Users (email, password_hash, role, security_question, security_answer_hash) VALUES (?, ?, 'student', ?, ?)");
@@ -45,6 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($stmt->execute()) {
                 $_SESSION['user_id'] = $conn->insert_id;
                 $_SESSION['role'] = 'student';
+                // Short-lived cookie triggers the welcome overlay on the profile page
                 setcookie('first_login', '1', time() + 600, '/');
                 header("Location: /pages/profile.php");
                 exit();

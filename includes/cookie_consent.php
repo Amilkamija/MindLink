@@ -10,10 +10,12 @@
   </div>
 </div>
 <script>
+  // Sets consent cookie for 6 months
   function acceptCookies() {
-    document.cookie = "cookie_consent=1; path=/; max-age=" + (60 * 60 * 24 * 365);
+    document.cookie = "cookie_consent=1; path=/; max-age=" + (60 * 60 * 24 * 180);
     document.getElementById('cookie-banner').style.display = 'none';
   }
+  // Hides banner without setting a cookie (will reappear next visit)
   function declineCookies() {
     document.getElementById('cookie-banner').style.display = 'none';
   }

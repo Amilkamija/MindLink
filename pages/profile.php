@@ -7,6 +7,7 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
+// viewing other profiles via id defaults to the logged-in user's own profile
 $profile_id     = isset($_GET['id']) ? (int)$_GET['id'] : $_SESSION['user_id'];
 $is_own_profile = ($profile_id === $_SESSION['user_id']);
 
@@ -17,6 +18,7 @@ function yearLabel($y) {
 
 $yearOptions = [1=>'Year 1',2=>'Year 2',3=>'Year 3',4=>'Year 4',5=>'Year 5',6=>'Postgraduate',7=>'Master'];
 
+// show the welcome overlay once on first login, then clear the cookie
 $show_welcome = !empty($_COOKIE['first_login']) && $is_own_profile;
 if ($show_welcome) {
     setcookie('first_login', '', time() - 3600, '/');
@@ -46,6 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $is_own_profile && isset($_POST['co
 }
 
 
+// profile photo upload :validates type and size before saving
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $is_own_profile && isset($_FILES['photo'])) {
     $file     = $_FILES['photo'];
     $allowed  = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
@@ -113,11 +116,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $is_own_profile && isset($_POST['re
     exit();
 }
 
+// Add skill: reuses existing skill from Skills table or creates a new one
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $is_own_profile && isset($_POST['add_skill'])) {
     $skill_name = trim($_POST['add_skill']);
     $new_skill  = null;
     if ($skill_name !== '') {
-        
+        // Find existing skill or insert a new one into the shared Skills table
         $stmt = $conn->prepare("SELECT skill_id FROM Skills WHERE skill_name = ?");
         $stmt->bind_param("s", $skill_name);
         $stmt->execute();
@@ -244,7 +248,7 @@ function formatStatus($status) {
 
 <?php $extra_css = '../assets/css/profile.css'; ?>
 <?php require_once __DIR__ . '/../includes/header2.php'; ?>
-
+/* welcome messag epop up*/
 <?php if ($show_welcome): ?>
 <div id="welcome-overlay" class="welcome-overlay">
   <div class="welcome-modal">
@@ -270,6 +274,7 @@ function formatStatus($status) {
 </script>
 <?php endif; ?>
 
+/* profile incomplete banner */ 
 <?php if ($profile_incomplete): ?>
 <div id="profile-banner" class="profile-incomplete-banner">
   <div class="profile-banner-inner">

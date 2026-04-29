@@ -6,6 +6,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
 }
 require_once __DIR__ . '/../config/db.php';
 
+/* Maps year integer (1-7) to a readable label */
 function yearLabel($y) {
     $map = [1=>'Year 1',2=>'Year 2',3=>'Year 3',4=>'Year 4',5=>'Year 5',6=>'Postgraduate',7=>'Master'];
     return $map[(int)$y] ?? ($y ? htmlspecialchars((string)$y) : '—');
@@ -16,6 +17,7 @@ function fmtDate($val) {
     return $t ? date('d-m-Y', $t) : htmlspecialchars((string)$val);
 }
 
+/* Shared helper: marks a single report as resolved */
 function resolveReport($conn, $report_id) {
     $stmt = $conn->prepare("UPDATE Reports SET status = 'resolved' WHERE report_id = ?");
     $stmt->bind_param("i", $report_id);
@@ -23,10 +25,13 @@ function resolveReport($conn, $report_id) {
     $stmt->close();
 }
 
+/* Handle all admin form submissions, then redirect to avoid re-POST */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Dismiss report — keep user/project in place
     if (isset($_POST['resolve_keep']) || isset($_POST['resolve_project_keep'])) {
         resolveReport($conn, (int)$_POST['report_id']);
 
+    // Remove user from a specific project and resolve the report
     } elseif (isset($_POST['resolve_remove'])) {
         $report_id   = (int)($_POST['report_id'] ?? 0);
         $reported_id = (int)$_POST['reported_user_id'];
@@ -39,6 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         if ($report_id > 0) { resolveReport($conn, $report_id); }
 
+    // Remove user from a shared conversation and resolve the report
     } elseif (isset($_POST['resolve_remove_chat'])) {
         $report_id      = (int)($_POST['report_id'] ?? 0);
         $reported_id    = (int)$_POST['reported_user_id'];
@@ -72,6 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute();
         $stmt->close();
 
+    // Full user deletion: clears memberships and reports before removing the account
     } elseif (isset($_POST['remove_user'])) {
         $uid = (int)$_POST['user_id'];
         $stmt = $conn->prepare("DELETE FROM TeamMembership WHERE user_id = ?");
@@ -94,6 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute();
         $stmt->close();
 
+    // Project removal: resolves all related reports and removes members before deleting
     } elseif (isset($_POST['resolve_project_remove'])) {
         $project_id = (int)$_POST['project_id'];
         $stmt = $conn->prepare("UPDATE Reports SET status = 'resolved' WHERE project_id = ?");
@@ -109,6 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute();
         $stmt->close();
 
+    // Appeal approved: reinstates user, resolves open reports, and marks appeal reviewed
     } elseif (isset($_POST['reinstate_appeal'])) {
         $appeal_id = (int)$_POST['appeal_id'];
         $uid = (int)$_POST['user_id'];
@@ -138,9 +147,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 
+/* Overview counters shown in the top stat cards */
 $totalUsers     = $conn->query("SELECT COUNT(*) FROM Users")->fetch_row()[0];
 $activeProjects = $conn->query("SELECT COUNT(*) FROM Projects WHERE status IN ('open','in_progress')")->fetch_row()[0];
-$totalMessages  = $conn->query("SELECT COUNT(*) FROM ContactMessages")->fetch_row()[0];
+$totalMessages  = $conn->query("SELECT COUNT(*) FROM Messages")->fetch_row()[0];
 $openReports    = $conn->query("SELECT COUNT(*) FROM Reports WHERE status = 'open'")->fetch_row()[0];
 
 
@@ -891,10 +901,6 @@ require_once __DIR__ . '/../includes/header2.php';
               <hr>
               <p style="font-size:0.9rem;">Choose an action:</p>
               <div class="d-flex flex-column gap-2 mt-2">
-                <form method="POST" action="/pages/admin.php">
-                  <input type="hidden" name="report_id" value="<?= $report['report_id'] ?>">
-                  <button type="submit" name="resolve_keep" class="btn btn-secondary w-100">Keep User</button>
-                </form>
                 <?php $userProjects = $reportedUserProjects[$report['reported_user_id']] ?? []; ?>
                 <?php if (!empty($userProjects)): ?>
                 <form method="POST" action="/pages/admin.php" class="d-flex gap-2 align-items-center">
@@ -928,9 +934,13 @@ require_once __DIR__ . '/../includes/header2.php';
                 <?php else: ?>
                 <p style="font-size:0.85rem; color:#999;">No shared conversations found.</p>
                 <?php endif; ?>
+                <form method="POST" action="/pages/admin.php">
+                  <input type="hidden" name="report_id" value="<?= $report['report_id'] ?>">
+                  <button type="submit" name="resolve_keep" class="btn w-100" style="background:#57673E; color:#fff; border:none;">Keep User</button>
+                </form>
               </div>
               <div class="d-flex justify-content-center mt-3">
-                <button class="btn btn-link" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-sm btn-secondary px-4" data-bs-dismiss="modal">Cancel</button>
               </div>
             </div>
           </div>

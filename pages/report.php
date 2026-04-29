@@ -15,6 +15,7 @@ $stmt->execute();
 $current_user_row = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 
+// If the session user no longer exists in DB, force logout
 if (!$current_user_row) {
     session_unset();
     session_destroy();
@@ -29,6 +30,7 @@ $appeal_success = '';
 $appeal_error   = '';
 $has_pending_appeal = false;
 
+// suspended users can't submit reports but can appeal their suspension from this page
 if ($is_suspended) {
     $stmt = $conn->prepare("SELECT 1 FROM Appeals WHERE user_id = ? AND status = 'pending' LIMIT 1");
     $stmt->bind_param("i", $current_user_id);
@@ -54,6 +56,7 @@ if ($is_suspended) {
     }
 }
 
+// GET params allow other pages to pre-select a user, project, or conversation
 $prefill_project_id = isset($_GET['project_id']) ? (int)$_GET['project_id'] : 0;
 $prefill_user_id = isset($_GET['user_id']) ? (int)$_GET['user_id'] : 0;
 $conversation_id = isset($_GET['conversation_id']) ? (int)$_GET['conversation_id'] : 0;
@@ -95,6 +98,7 @@ if ($conversation_id > 0 && $prefill_user_id === 0) {
 
 $default_tab = $prefill_project_id > 0 ? 'project' : 'user';
 
+// Admins can report anyone; regular users can report admins, teammates, or conversation partners
 if ($is_admin) {
     $stmt = $conn->prepare("SELECT user_id, email FROM Users WHERE user_id != ? ORDER BY email");
     $stmt->bind_param("i", $current_user_id);
@@ -104,16 +108,19 @@ if ($is_admin) {
         FROM Users u
         LEFT JOIN TeamMembership tm_other ON tm_other.user_id = u.user_id
         LEFT JOIN TeamMembership tm_me ON tm_me.project_id = tm_other.project_id AND tm_me.user_id = ?
-        WHERE u.user_id != ? AND (u.role = 'admin' OR tm_me.user_id IS NOT NULL)
+        LEFT JOIN ConversationParticipants cp_other ON cp_other.user_id = u.user_id
+        LEFT JOIN ConversationParticipants cp_me ON cp_me.conversation_id = cp_other.conversation_id AND cp_me.user_id = ?
+        WHERE u.user_id != ? AND (u.role = 'admin' OR tm_me.user_id IS NOT NULL OR cp_me.user_id IS NOT NULL)
         ORDER BY u.email
     ");
-    $stmt->bind_param("ii", $current_user_id, $current_user_id);
+    $stmt->bind_param("iii", $current_user_id, $current_user_id, $current_user_id);
 }
 $stmt->execute();
 $all_users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
 
 
+// Any user can report any project 
 $all_projects = $conn->query("SELECT project_id, title FROM Projects ORDER BY title")->fetch_all(MYSQLI_ASSOC);
 
 
@@ -146,7 +153,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_suspended) {
                 $stmt->close();
 
                 if (!$allowed) {
-                    // Otherwise must be a teammate
+                    // Allow if they share a project
                     $stmt = $conn->prepare("
                         SELECT 1 FROM TeamMembership tm_other
                         JOIN TeamMembership tm_me ON tm_me.project_id = tm_other.project_id AND tm_me.user_id = ?
@@ -159,10 +166,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_suspended) {
                     $allowed = $stmt->num_rows > 0;
                     $stmt->close();
                 }
+
+                if (!$allowed) {
+                    // Allow if they share a conversation
+                    $stmt = $conn->prepare("
+                        SELECT 1 FROM ConversationParticipants cp_other
+                        JOIN ConversationParticipants cp_me ON cp_me.conversation_id = cp_other.conversation_id AND cp_me.user_id = ?
+                        WHERE cp_other.user_id = ?
+                        LIMIT 1
+                    ");
+                    $stmt->bind_param("ii", $current_user_id, $reported_user_id);
+                    $stmt->execute();
+                    $stmt->store_result();
+                    $allowed = $stmt->num_rows > 0;
+                    $stmt->close();
+                }
             }
 
             if (!$allowed) {
-                $error = "You can only report users who are in a project with you.";
+                $error = "You can only report users you have been in a project or conversation with.";
             } else {
                 $stmt = $conn->prepare("INSERT INTO Reports (reporter_id, reported_user_id, reason, status) VALUES (?, ?, ?, 'open')");
                 $stmt->bind_param("iis", $current_user_id, $reported_user_id, $full_reason);

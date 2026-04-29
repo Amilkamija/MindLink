@@ -8,6 +8,7 @@ $success = '';
 $reset_link = '';
 $security_question = '';
 
+//look up the user's security question by email
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email']) && !isset($_POST['security_answer'])) {
     $email = trim($_POST['email']);
 
@@ -30,6 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email']) && !isset($_
     }
 }
 
+// verify the security answer, then generate a reset token
 elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['security_answer'])) {
     $answer = strtolower(trim($_POST['security_answer']));
     $email = $_SESSION['reset_email'] ?? '';
