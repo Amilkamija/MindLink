@@ -7,16 +7,19 @@ $current_user_id = $_SESSION['user_id'] ?? null;
 
 $current_user_suspended = false;
 $current_profile_incomplete = false;
+
 if ($current_user_id) {
     $s = $conn->prepare("SELECT status, course, year, bio FROM Users WHERE user_id = ? LIMIT 1");
     $s->bind_param("i", $current_user_id);
     $s->execute();
     $s_row = $s->get_result()->fetch_assoc();
     $s->close();
+
     $current_user_suspended = ($s_row && $s_row['status'] === 'suspended');
 
     $skill_count = 0;
     $tag_count = 0;
+
     if ($s_row) {
         $s2 = $conn->prepare("SELECT COUNT(*) FROM UserSkills WHERE user_id = ?");
         $s2->bind_param("i", $current_user_id);
@@ -32,6 +35,7 @@ if ($current_user_id) {
         $s3->fetch();
         $s3->close();
     }
+
     $current_profile_incomplete = ($s_row && (
         empty($s_row['course']) || empty($s_row['year']) || empty($s_row['bio']) ||
         $skill_count === 0 || $tag_count === 0
@@ -109,6 +113,17 @@ if (!empty($params)) {
 $stmt->execute();
 $result = $stmt->get_result();
 
+$projects = [];
+$latest_created_at = '';
+
+while ($row = $result->fetch_assoc()) {
+    if ($latest_created_at === '' || $row['created_at'] > $latest_created_at) {
+        $latest_created_at = $row['created_at'];
+    }
+
+    $projects[] = $row;
+}
+
 function formatStatus($status) {
     switch ($status) {
         case 'open':
@@ -123,10 +138,12 @@ function formatStatus($status) {
 }
 
 function shortText($text, $length = 140) {
-    $text = trim($text);
+    $text = trim((string)$text);
+
     if (mb_strlen($text) <= $length) {
         return htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
     }
+
     return htmlspecialchars(mb_substr($text, 0, $length), ENT_QUOTES, 'UTF-8') . '...';
 }
 ?>
@@ -150,8 +167,23 @@ function shortText($text, $length = 140) {
         <a href="/pages/projects.php?status=completed" class="my-projects-btn filter-completed">Completed</a>
     </div>
 
-    <?php if ($result && $result->num_rows > 0): ?>
-        <?php while ($project = $result->fetch_assoc()): ?>
+    <div
+        id="newProjectsBanner"
+        class="alert alert-success text-center"
+        style="display:none; cursor:pointer;"
+        onclick="window.location.reload();"
+    >
+        New projects available — click to refresh
+    </div>
+
+    <div
+        id="projectsList"
+        data-latest-created-at="<?php echo htmlspecialchars($latest_created_at, ENT_QUOTES, 'UTF-8'); ?>"
+        data-status-filter="<?php echo htmlspecialchars($status_filter, ENT_QUOTES, 'UTF-8'); ?>"
+    ></div>
+
+    <?php if (!empty($projects)): ?>
+        <?php foreach ($projects as $project): ?>
 
             <?php
             $status = $project['status'];
@@ -217,16 +249,12 @@ function shortText($text, $length = 140) {
                             Apply
                         </a>
                     <?php endif; ?>
-
-                    <?php if ($current_user_id && (int)$current_user_id !== (int)$project['owner_id']): ?>
-                        <a href="/pages/report.php?project_id=<?php echo (int)$project['project_id']; ?>" class="details-btn" style="font-size:0.82rem; font-weight:500; color:#c0392b; border-color:#e8c4c0;">Report</a>
-                    <?php endif; ?>
                 </div>
             </div>
 
             <div class="section-line mt-4"></div>
 
-        <?php endwhile; ?>
+        <?php endforeach; ?>
     <?php else: ?>
         <div class="project-card">
             <div class="project-card-body">
@@ -238,35 +266,65 @@ function shortText($text, $length = 140) {
 
 <?php if ($current_profile_incomplete): ?>
 <div class="modal fade" id="incompleteProfileModal" tabindex="-1">
-<div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content p-4 text-center">
-    <h5 class="modal-title mb-2">Complete Your Profile First</h5>
-    <hr>
-    <p style="font-size:0.95rem;">You need to fill in your <strong>course</strong>, <strong>year</strong>, <strong>bio</strong>, <strong>skills</strong>, and <strong>interests</strong> before you can apply to projects.</p>
-    <div class="d-flex justify-content-center gap-3 mt-3">
-        <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        <a href="/pages/profile.php" class="btn btn-success">Go to Profile</a>
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content p-4 text-center">
+            <h5 class="modal-title mb-2">Complete Your Profile First</h5>
+            <hr>
+            <p style="font-size:0.95rem;">You need to fill in your <strong>course</strong>, <strong>year</strong>, <strong>bio</strong>, <strong>skills</strong>, and <strong>interests</strong> before you can apply to projects.</p>
+            <div class="d-flex justify-content-center gap-3 mt-3">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <a href="/pages/profile.php" class="btn btn-success">Go to Profile</a>
+            </div>
+        </div>
     </div>
-    </div>
-</div>
 </div>
 <?php endif; ?>
 
 <?php if ($current_user_suspended): ?>
 <div class="modal fade" id="suspendedModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content p-4 text-center">
-    <h5 class="modal-title mb-2">Account Suspended</h5>
-    <hr>
-    <p style="font-size:0.95rem;">Your account has been suspended/removed. You are not able to apply to projects at this time.</p>
-    <p style="font-size:0.9rem; color:#888;">If you believe this is a mistake, please contact support.</p>
-    <div class="d-flex justify-content-center mt-3">
-    <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-    </div>
-    </div>
+        <div class="modal-content p-4 text-center">
+            <h5 class="modal-title mb-2">Account Suspended</h5>
+            <hr>
+            <p style="font-size:0.95rem;">Your account has been suspended/removed. You are not able to apply to projects at this time.</p>
+            <p style="font-size:0.9rem; color:#888;">If you believe this is a mistake, please contact support.</p>
+            <div class="d-flex justify-content-center mt-3">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
     </div>
 </div>
 <?php endif; ?>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const projectsList = document.getElementById('projectsList');
+    const banner = document.getElementById('newProjectsBanner');
+
+    if (!projectsList || !banner) return;
+
+    const latestCreatedAt = projectsList.dataset.latestCreatedAt;
+    const statusFilter = projectsList.dataset.statusFilter;
+
+    if (!latestCreatedAt) return;
+
+    setInterval(function () {
+        const url = '/pages/check_new_projects.php?latest_created_at=' 
+            + encodeURIComponent(latestCreatedAt)
+            + '&status=' 
+            + encodeURIComponent(statusFilter);
+
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                if (data.has_new) {
+                    banner.style.display = 'block';
+                }
+            })
+            .catch(() => {});
+    }, 5000);
+});
+</script>
 
 <?php
 $stmt->close();
