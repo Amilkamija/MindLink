@@ -709,6 +709,7 @@ if ($selectedConversationId > 0) {
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
+
     const form = document.getElementById("messageForm");
     const input = document.getElementById("messageInput");
     const thread = document.getElementById("messageThread");
@@ -719,17 +720,21 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (!form || !input || !thread) return;
 
+    /* SEND MESSAGE */
     form.addEventListener("submit", function (e) {
+
         e.preventDefault();
 
         const message = input.value.trim();
 
         if (message === "") return;
 
-        if (/\d/.test(message)) {
-    alert("Numbers are not allowed in chat messages.");
-    return;
-}
+        const digitsOnly = message.replace(/\D/g, "");
+
+        if (digitsOnly.length >= 6) {
+            alert("Numbers are not allowed in chat messages.");
+            return;
+        }
 
         const formData = new FormData(form);
         formData.append("ajax", "1");
@@ -740,34 +745,60 @@ document.addEventListener("DOMContentLoaded", function () {
         })
         .then(response => response.json())
         .then(data => {
+
             if (!data.success) {
                 alert(data.message || "Could not send message.");
                 return;
             }
 
-            const emptyCard = thread.querySelector(".empty-chat-card");
-            if (emptyCard) {
-                emptyCard.remove();
-            }
-
-            const row = document.createElement("div");
-            row.className = "message-row message-right";
-
-            row.innerHTML = `
-                <div class="message-bubble-wrap">
-                    <div class="message-bubble">${data.content}</div>
-                    <div class="message-meta">${data.display_time}</div>
-                </div>
-            `;
-
-            thread.appendChild(row);
             input.value = "";
-            thread.scrollTop = thread.scrollHeight;
+
+            loadMessages();
+
         })
         .catch(() => {
-            alert("Something went wrong. Please try again.");
+            alert("Something went wrong.");
         });
+
     });
+
+    /* LOAD NEW MESSAGES */
+    function loadMessages() {
+
+    fetch(window.location.href)
+    .then(response => response.text())
+    .then(html => {
+
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, "text/html");
+
+        const newThread = doc.querySelector("#messageThread");
+
+        if (
+            newThread &&
+            newThread.innerHTML.trim() !== thread.innerHTML.trim()
+        ) {
+
+            const wasAtBottom =
+                thread.scrollTop + thread.clientHeight >= thread.scrollHeight - 20;
+
+            thread.innerHTML = newThread.innerHTML;
+
+            if (wasAtBottom) {
+                thread.scrollTop = thread.scrollHeight;
+            }
+        }
+
+    })
+    .catch(() => {
+        console.log("Could not refresh messages.");
+    });
+
+}
+
+    /* AUTO REFRESH EVERY 2 SECONDS */
+    setInterval(loadMessages, 3000);
+
 });
 </script>
 
