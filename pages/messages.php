@@ -1,4 +1,4 @@
-<?php 
+<?php  
 /**
  * @file messages.php
  * @brief MindLink – secure and dynamic messaging page
@@ -93,8 +93,11 @@ function pageExists($filename) {
     return file_exists(__DIR__ . '/' . ltrim($filename, '/'));
 }
 
+/*
+   Blocks phone numbers and long numeric messages. */
 function containsPhoneNumber($text) {
-    return preg_match('/(\+?\d[\d\s\-\(\)]{7,}\d)/', $text);
+    // Blocks all numbers: short numbers, long numbers, and phone numbers
+    return preg_match('/\d/', (string)$text);
 }
 
 function jsonResponse($data) {
@@ -244,7 +247,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['conversation_id'])) {
     } elseif ($text === '') {
         $errorMessage = "Message cannot be empty.";
     } elseif (containsPhoneNumber($text)) {
-        $errorMessage = "Phone numbers are not allowed in chat messages.";
+        $errorMessage = "Phone numbers or long numbers are not allowed in chat messages.";
     } else {
         $text = mb_substr($text, 0, 2000);
 
@@ -314,17 +317,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['conversation_id'])) {
                             ]);
                         }
 
-                        $redirectUrl = "/pages/messages.php?conversation_id=" . $conversationId;
-
-                        if ($searchTerm !== '') {
-                            $redirectUrl .= '&search=' . urlencode($searchTerm);
-                        }
-
-                        if ($filter !== 'all') {
-                            $redirectUrl .= '&filter=' . urlencode($filter);
-                        }
-
-                        header("Location: " . $redirectUrl);
+                        header("Location: /pages/messages.php?conversation_id=" . $conversationId);
                         exit();
                     } else {
                         $errorMessage = "Could not send your message right now.";
@@ -702,6 +695,7 @@ if ($selectedConversationId > 0) {
                             id="messageInput"
                             placeholder="Type a message..."
                             maxlength="2000"
+                            autocomplete="off"
                             required
                         >
 
@@ -719,9 +713,11 @@ document.addEventListener("DOMContentLoaded", function () {
     const input = document.getElementById("messageInput");
     const thread = document.getElementById("messageThread");
 
-    if (!form || !input || !thread) return;
+    if (thread) {
+        thread.scrollTop = thread.scrollHeight;
+    }
 
-    thread.scrollTop = thread.scrollHeight;
+    if (!form || !input || !thread) return;
 
     form.addEventListener("submit", function (e) {
         e.preventDefault();
@@ -730,12 +726,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (message === "") return;
 
-        const phonePattern = /(\+?\d[\d\s\-\(\)]{7,}\d)/;
-
-        if (phonePattern.test(message)) {
-            alert("Phone numbers are not allowed in chat messages.");
-            return;
-        }
+        if (/\d/.test(message)) {
+    alert("Numbers are not allowed in chat messages.");
+    return;
+}
 
         const formData = new FormData(form);
         formData.append("ajax", "1");
