@@ -78,7 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute();
         $stmt->close();
 
-    // Full user deletion: clears memberships and reports before removing the account
+    // Full user deletion: clears memberships and reports before removing the account(didn't include this in admin overall)
     } elseif (isset($_POST['remove_user'])) {
         $uid = (int)$_POST['user_id'];
         $stmt = $conn->prepare("DELETE FROM TeamMembership WHERE user_id = ?");
