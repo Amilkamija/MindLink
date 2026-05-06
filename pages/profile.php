@@ -16,7 +16,6 @@ function yearLabel($y) {
     return $map[(int)$y] ?? ($y ? htmlspecialchars((string)$y) : '—');
 }
 
-$yearOptions = [1=>'Year 1',2=>'Year 2',3=>'Year 3',4=>'Year 4',5=>'Year 5',6=>'Postgraduate',7=>'Master'];
 
 // show the welcome overlay once on first login, then clear the cookie
 $show_welcome = !empty($_COOKIE['first_login']) && $is_own_profile;
@@ -38,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $is_own_profile && isset($_POST['bi
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $is_own_profile && isset($_POST['course'])) {
     $course = trim($_POST['course']);
-    $year   = (int)$_POST['year'];
+    $year = (int)$_POST['year'];
     $stmt = $conn->prepare("UPDATE Users SET course = ?, year = ? WHERE user_id = ?");
     $stmt->bind_param("sii", $course, $year, $_SESSION['user_id']);
     $stmt->execute();
@@ -50,14 +49,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $is_own_profile && isset($_POST['co
 
 // profile photo upload :validates type and size before saving
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $is_own_profile && isset($_FILES['photo'])) {
-    $file     = $_FILES['photo'];
-    $allowed  = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    $file = $_FILES['photo'];
+    $allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
     $max_size = 2 * 1024 * 1024; // 2 MB
 
     if ($file['error'] === UPLOAD_ERR_OK && in_array($file['type'], $allowed) && $file['size'] <= $max_size) {
-        $ext      = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $ext= pathinfo($file['name'], PATHINFO_EXTENSION);
         $filename = 'user_' . $_SESSION['user_id'] . '_' . time() . '.' . $ext;
-        $dest     = __DIR__ . '/../assets/uploads/profiles/' . $filename;
+        $dest= __DIR__ . '/../assets/uploads/profiles/' . $filename;
 
         if (!is_dir(__DIR__ . '/../assets/uploads/profiles/')) {
             mkdir(__DIR__ . '/../assets/uploads/profiles/', 0755, true);
@@ -75,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $is_own_profile && isset($_FILES['p
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $is_own_profile && isset($_POST['add_tag'])) {
-    $tag     = trim($_POST['add_tag']);
+    $tag = trim($_POST['add_tag']);
     $new_tag = null;
     if ($tag !== '') {
         $stmt = $conn->prepare("SELECT tag_id FROM UserTags WHERE user_id = ? AND tag_name = ?");
@@ -103,7 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $is_own_profile && isset($_POST['ad
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $is_own_profile && isset($_POST['remove_tag'])) {
     $tag_id = (int)$_POST['remove_tag'];
-    $stmt   = $conn->prepare("DELETE FROM UserTags WHERE tag_id = ? AND user_id = ?");
+    $stmt = $conn->prepare("DELETE FROM UserTags WHERE tag_id = ? AND user_id = ?");
     $stmt->bind_param("ii", $tag_id, $_SESSION['user_id']);
     $stmt->execute();
     $stmt->close();
@@ -119,7 +118,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $is_own_profile && isset($_POST['re
 // Add skill: reuses existing skill from Skills table or creates a new one
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $is_own_profile && isset($_POST['add_skill'])) {
     $skill_name = trim($_POST['add_skill']);
-    $new_skill  = null;
+    $new_skill = null;
     if ($skill_name !== '') {
         // Find existing skill or insert a new one into the shared Skills table
         $stmt = $conn->prepare("SELECT skill_id FROM Skills WHERE skill_name = ?");
