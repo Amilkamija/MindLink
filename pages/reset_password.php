@@ -6,7 +6,7 @@ $success = '';
 $error   = '';
 $token   = trim($_GET['token'] ?? '');
 
-// Validate the token: must exist, be unused, and be less than 1 hour old
+// Validate the token: must exist, be unused, and be less than 1 hour old , it works by ip + token (should've  been changed , per account)
 $valid_token = false;
 if ($token !== '') {
     $stmt = $conn->prepare(
