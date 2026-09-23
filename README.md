@@ -1,4 +1,4 @@
-# MindLink Platform — Technical & Operational Specification
+# MindLink Platform — Technical Specification
 
 MindLink is an enterprise-grade web application designed for academic institution environments to streamline team formation, project matching, and student collaboration. The platform replaces manual or random group allocation with automated skill-weighted matching, role-based access control (RBAC), and end-to-end operational moderation workflows.
 
@@ -8,26 +8,11 @@ MindLink is an enterprise-grade web application designed for academic institutio
 
 The application follows an MVC-inspired architectural pattern leveraging a monolithic PHP/MySQL core integrated with responsive Bootstrap 5 components and asynchronous polling workflows.
 
-+-----------------------------------------------------------------------+
-|                            Client Layer                               |
-|   HTML5 / CSS3 / JavaScript / Bootstrap 5 / Asynchronous Polling       |
-+-----------------------------------+-----------------------------------+
-|
-v
-+-----------------------------------------------------------------------+
-|                       Application Layer (PHP)                         |
-|  +------------------+  +-------------------+  +--------------------+  |
-|  | Auth & Security  |  |  Matching Engine  |  | Messaging Gateway  |  |
-|  +------------------+  +-------------------+  +--------------------+  |
-|  | Project Pipeline |  | Reporting & Admin |  | Settings & Config  |  |
-|  +------------------+  +-------------------+  +--------------------+  |
-+-----------------------------------+-----------------------------------+
-|
-v
-+-----------------------------------------------------------------------+
-|                     Data & Persistence Layer                          |
-|                       MySQL / MariaDB Engine                          |
-+-----------------------------------------------------------------------+
+
+Client Layer: HTML5 / CSS3 / JavaScript / Bootstrap 5 / Asynchronous Polling       
+Application Layer (PHP): Auth & Security , Matching Engine  ,Messaging Gateway ,Project Pipeline ,Reporting & Admin , Settings & Config   
+Data & Persistence Layer : MySQL / MariaDB Engine                        
+
 
 
 ### Stack Components
